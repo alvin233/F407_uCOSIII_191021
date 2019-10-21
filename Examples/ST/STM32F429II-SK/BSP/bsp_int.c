@@ -401,6 +401,17 @@ void  BSP_IntHandlerDMA2D              (void)  { BSP_IntHandler(BSP_INT_ID_DMA2D
 *********************************************************************************************************
 */
 
+	
+void EXTI4_IRQHandler(void)
+{	
+	OSIntEnter();
+	if(EXTI_GetITStatus(EXTI_Line4) != RESET)
+	{
+		EXTI_ClearITPendingBit(EXTI_Line4);
+		W5500_Interrupt=1;
+	}
+   OSIntExit();
+}
 /*
 *********************************************************************************************************
 *                                          BSP_IntHandler()
