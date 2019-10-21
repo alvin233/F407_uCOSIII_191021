@@ -250,15 +250,33 @@ static  void  AppObjCreate (void)
 
 void  App_TaskEq0Fp (void  *p_arg)
 {
-  OS_ERR  err;
-    
+		OS_ERR  err;
+    Load_Net_Parameters();		//装载网络参数	
+		W5500_Hardware_Reset();		//硬件复位W5500
+		W5500_Initialization();		//W5500初始货配置
     while (DEF_TRUE) {
+			W5500_Socket_Set();//W5500端口初始化配置
+			if(W5500_Interrupt)//处理W5500中断		
+			{
+				W5500_Interrupt_Process();//W5500中断处理程序框架
+			}
+			if((S0_Data & S_RECEIVE) == S_RECEIVE)//如果Socket0接收到数据
+			{
+				S0_Data&=~S_RECEIVE;
+				Process_Socket_Data(0);//W5500接收并发送接收到的数据
+			}
+			/* send every 500ms */
+			if(S0_State == (S_INIT|S_CONN))
+			{
+				S0_Data&=~S_TRANSMITOK;
+				memcpy(Tx_Buffer, "\r\nWelcome To YiXinElec!\r\n", 23);	
+				Write_SOCK_Data_Buffer(0, Tx_Buffer, 23);//指定Socket(0~7)发送数据处理,端口0发送23字节数据
+			}			
        /* do something here */      
-        OSTimeDlyHMSM(0u, 0u, 2u, 100u,
+        OSTimeDlyHMSM(0u, 0u, 0u, 500u,
                   OS_OPT_TIME_HMSM_STRICT,
                   &err);
         /* output your data by terminal */
         APP_TRACE_INFO(("Eq0 Task Running ....\n"));     
-
     }
 }

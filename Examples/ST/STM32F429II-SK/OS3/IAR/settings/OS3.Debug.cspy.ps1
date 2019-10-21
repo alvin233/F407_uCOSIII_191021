@@ -23,9 +23,9 @@
 
 if ($debugfile -eq "")
 {
-& "C:\Program Files (x86)\IAR Systems\Embedded Workbench 8.1\common\bin\cspybat" -f "E:\ucosiii\Micrium_STM32F429II-SK_OS3\Micrium\Examples\ST\STM32F429II-SK\OS3\IAR\settings\OS3.Debug.general.xcl" --backend -f "E:\ucosiii\Micrium_STM32F429II-SK_OS3\Micrium\Examples\ST\STM32F429II-SK\OS3\IAR\settings\OS3.Debug.driver.xcl" 
+& "C:\Program Files (x86)\IAR Systems\Embedded Workbench 8.1\common\bin\cspybat" -f "E:\ucosiii\Micrium_STM32F407_OS3\Micrium\Examples\ST\STM32F429II-SK\OS3\IAR\settings\OS3.Debug.general.xcl" --backend -f "E:\ucosiii\Micrium_STM32F407_OS3\Micrium\Examples\ST\STM32F429II-SK\OS3\IAR\settings\OS3.Debug.driver.xcl" 
 }
 else
 {
-& "C:\Program Files (x86)\IAR Systems\Embedded Workbench 8.1\common\bin\cspybat" -f "E:\ucosiii\Micrium_STM32F429II-SK_OS3\Micrium\Examples\ST\STM32F429II-SK\OS3\IAR\settings\OS3.Debug.general.xcl" --debug_file=$debugfile --backend -f "E:\ucosiii\Micrium_STM32F429II-SK_OS3\Micrium\Examples\ST\STM32F429II-SK\OS3\IAR\settings\OS3.Debug.driver.xcl" 
+& "C:\Program Files (x86)\IAR Systems\Embedded Workbench 8.1\common\bin\cspybat" -f "E:\ucosiii\Micrium_STM32F407_OS3\Micrium\Examples\ST\STM32F429II-SK\OS3\IAR\settings\OS3.Debug.general.xcl" --debug_file=$debugfile --backend -f "E:\ucosiii\Micrium_STM32F407_OS3\Micrium\Examples\ST\STM32F429II-SK\OS3\IAR\settings\OS3.Debug.driver.xcl" 
 }

@@ -474,6 +474,11 @@
               <FileType>5</FileType>
               <FilePath>..\stm32f4xx_conf.h</FilePath>
             </File>
+            <File>
+              <FileName>w5500.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\w5500.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
