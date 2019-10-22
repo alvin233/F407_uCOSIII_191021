@@ -219,7 +219,7 @@
 #define W5500_RST_Pin		GPIO_Pin_15	//定义W5500的RST引脚
 #define W5500_RST_PORT	GPIOC
 
-#define W5500_INT_Pin		GPIO_Pin_14	//定义W5500的INT引脚
+#define W5500_INT_Pin		GPIO_Pin_4	//定义W5500的INT引脚
 #define W5500_INT_PORT	GPIOC
 
 /***************----- 网络参数变量定义 -----***************/
@@ -297,5 +297,6 @@ extern void Process_Socket_Data(SOCKET s);
 extern void Write_SOCK_Data_Buffer(SOCKET s, unsigned char *dat_ptr, unsigned short size);
 extern unsigned short Read_W5500_SOCK_2Byte(SOCKET s, unsigned short reg);
 extern unsigned short Read_SOCK_Data_Buffer(SOCKET s, unsigned char *dat_ptr);
+extern void EXTI4_IRQHandler(void);;
 #endif
 

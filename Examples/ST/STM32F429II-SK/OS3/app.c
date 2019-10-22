@@ -281,6 +281,7 @@ void  App_TaskEq0Fp (void  *p_arg)
         APP_TRACE_INFO(("Eq0 Task Running ....\n"));     
     }
 		#else 
+    W5500_GPIO_Configuration();
     while (DEF_TRUE) {
 			 APP_TRACE_INFO(("Running ....\n"));     
 			OSTimeDlyHMSM(0u, 0u, 1u, 500u,

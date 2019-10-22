@@ -59,10 +59,37 @@ unsigned char W5500_Interrupt;	//W5500中断标志(0:无中断,1:有中断)
 void W5500_GPIO_Configuration(void)
 {
 
-	GPIO_InitTypeDef  GPIO_InitStructure;
-  EXTI_InitTypeDef  EXTI_InitStructure;	
-
-	/* W5500_RST引脚初始化配置(PC5) */
+    GPIO_InitTypeDef  GPIO_InitStructure;
+#if 1
+        /* W5500_INT引脚初始化配置(PC4) */	
+	GPIO_InitStructure.GPIO_Pin = W5500_INT_Pin;
+	GPIO_InitStructure.GPIO_Speed=GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN; // GPIO_Mode_IPU
+ 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;// inner pull up       
+	GPIO_Init(W5500_INT_PORT, &GPIO_InitStructure);
+	/* Connect EXTI Line4 to PC4 */
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);//
+	
+	SYSCFG_EXTILineConfig(EXTI_PortSourceGPIOC, GPIO_PinSource4);//将中断线0与GPIOA映射起来，那么很显然是GPIOA.0与EXTI1中断线连接了。
+        EXTI_InitTypeDef   EXTI_InitStructure; 
+	/* PC4 as W5500 interrupt input */
+	EXTI_InitStructure.EXTI_Line = EXTI_Line4;
+	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;//的例子设置中断线4上的中断为下降沿触发
+	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+	EXTI_Init(&EXTI_InitStructure);
+        // 配置中断分组（NVIC），并使能中断。 
+        NVIC_InitTypeDef NVIC_InitStructure;
+        NVIC_InitStructure.NVIC_IRQChannel = EXTI4_IRQn; //使能按键外部中断通道
+        NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x02; //抢占优先级2， 
+        NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x02; //响应优先级2
+        NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE; //使能外部中断通道
+        NVIC_Init(&NVIC_InitStructure); //中断优先级分组初始化
+	/* enable int in ucos iii */
+	BSP_IntVectSet(BSP_INT_ID_EXTI4, EXTI4_IRQHandler); //MY_BSP_IntHandlerUSART2
+	BSP_IntEn(BSP_INT_ID_EXTI4);
+#endif
+        	/* W5500_RST引脚初始化配置(PC5) */
 	GPIO_InitStructure.GPIO_Pin  = W5500_RST_Pin;
 	GPIO_InitStructure.GPIO_Speed=GPIO_Speed_25MHz;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;// GPIO_Mode_Out_PP;
@@ -70,23 +97,6 @@ void W5500_GPIO_Configuration(void)
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;// floating
 	GPIO_Init(W5500_RST_PORT, &GPIO_InitStructure);
 	GPIO_ResetBits(W5500_RST_PORT, W5500_RST_Pin);
-	
-	/* W5500_INT引脚初始化配置(PC4) */	
-	GPIO_InitStructure.GPIO_Pin = W5500_INT_Pin;
-	GPIO_InitStructure.GPIO_Speed=GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN; // GPIO_Mode_IPU
-	GPIO_Init(W5500_INT_PORT, &GPIO_InitStructure);
-		
-#if 1
-	/* Connect EXTI Line4 to PC4 */
-	SYSCFG_EXTILineConfig(EXTI_PortSourceGPIOC, GPIO_PinSource4);
-	/* PC4 as W5500 interrupt input */
-	EXTI_InitStructure.EXTI_Line = EXTI_Line4;
-	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
-	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
-	EXTI_Init(&EXTI_InitStructure);
-#endif
 }
 
 

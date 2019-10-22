@@ -86,6 +86,7 @@ static  void  BSP_IntHandler     (CPU_DATA  int_id);
 static  void  BSP_IntHandlerDummy(void);
 
 
+
 /*
 *********************************************************************************************************
 *                                     LOCAL CONFIGURATION ERRORS
@@ -392,7 +393,7 @@ void  BSP_IntHandlerLTDC               (void)  { BSP_IntHandler(BSP_INT_ID_LTDC)
 void  BSP_IntHandlerLTDC_ER            (void)  { BSP_IntHandler(BSP_INT_ID_LTDC_ER);             }
 void  BSP_IntHandlerDMA2D              (void)  { BSP_IntHandler(BSP_INT_ID_DMA2D);               }
 
-
+void EXTI4_IRQHandler(void);
 /*
 *********************************************************************************************************
 *********************************************************************************************************
@@ -400,17 +401,25 @@ void  BSP_IntHandlerDMA2D              (void)  { BSP_IntHandler(BSP_INT_ID_DMA2D
 *********************************************************************************************************
 *********************************************************************************************************
 */
+/*
+1）使能IO口时钟，初始化IO口为输入。 
+2）使能SYSCFG时钟，设置IO口与中断线的映射关系。 
+3）初始化线上中断，设置触发条件等。 
+4）配置中断分组（NVIC），并使能中断。 
 
+5）编写中断服务函数。 
+*/
 	
 void EXTI4_IRQHandler(void)
 {	
-	OSIntEnter();
-	if(EXTI_GetITStatus(EXTI_Line4) != RESET)
-	{
-		EXTI_ClearITPendingBit(EXTI_Line4);
-		W5500_Interrupt=1;
-	}
-   OSIntExit();
+  OSIntEnter();
+  if(EXTI_GetITStatus(EXTI_Line4) != RESET)
+  {
+    EXTI_ClearITPendingBit(EXTI_Line4);
+    APP_TRACE_INFO(("Exti4\n"));     
+    W5500_Interrupt=1;
+  }
+  OSIntExit();
 }
 /*
 *********************************************************************************************************
@@ -471,6 +480,5 @@ static  void  BSP_IntHandlerDummy (void)
 {
 
 }
-
 
 
