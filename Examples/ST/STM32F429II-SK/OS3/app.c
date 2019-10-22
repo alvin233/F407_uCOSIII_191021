@@ -251,9 +251,8 @@ static  void  AppObjCreate (void)
 void  App_TaskEq0Fp (void  *p_arg)
 {
   OS_ERR  err;
-	#if 1
-
-    SPI_Configuration();		//W5500 SPI初始化配置(STM32 SPI1)
+	/* SPI configuration */
+    SPI_Configuration();	
 
     W5500_GPIO_Configuration();	//W5500 GPIO初始化配置	
 
@@ -285,14 +284,5 @@ void  App_TaskEq0Fp (void  *p_arg)
         /* output your data by terminal */
         //APP_TRACE_INFO(("Eq0 Task Running ....\n"));     
     }
-		#else 
-    //W5500_GPIO_Configuration();
-    while (DEF_TRUE) {
-			 APP_TRACE_INFO(("Running ....\n"));     
-			OSTimeDlyHMSM(0u, 0u, 1u, 500u,
-					OS_OPT_TIME_HMSM_STRICT,
-					&err);
-		}			
-		
-		#endif 
+
 }
