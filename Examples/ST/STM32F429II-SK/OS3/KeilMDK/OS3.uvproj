@@ -391,7 +391,7 @@
             <uClangAs>0</uClangAs>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define></Define>
+              <Define>DEBUG_ENABLE_SEMIHOST</Define>
               <Undefine></Undefine>
               <IncludePath></IncludePath>
             </VariousControls>

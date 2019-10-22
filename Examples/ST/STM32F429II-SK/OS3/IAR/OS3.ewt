@@ -2404,6 +2404,12 @@
         <file>
             <name>$PROJ_DIR$\..\stm32f4xx_conf.h</name>
         </file>
+        <file>
+            <name>$PROJ_DIR$\..\w5500.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\w5500.h</name>
+        </file>
     </group>
     <group>
         <name>BSP</name>

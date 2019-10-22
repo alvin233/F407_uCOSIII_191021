@@ -358,9 +358,10 @@
                     <state>$PROJ_DIR$\..\..\..\..\..\Software\uC-CPU\ARM-Cortex-M4\IAR</state>
                     <state>$PROJ_DIR$\..\..\..\..\..\Software\uC-LIB</state>
                     <state>$PROJ_DIR$\..\..\..\..\..\Software\uC-LIB\Ports\ARM-Cortex-M4\IAR</state>
-                    <state>$PROJ_DIR$\..\..\..\..\..\Software\uCOS-III\Ports\ARM-Cortex-M4   </state>
+                    <state>$PROJ_DIR$\..\..\..\..\..\Software\uCOS-III\Ports\ARM-Cortex-M4</state>
                     <state>$PROJ_DIR$\..\..\..\..\..\Software\uCOS-III\Ports\ARM-Cortex-M4\Generic\IAR</state>
                     <state>$PROJ_DIR$\..\..\..\..\..\Software\uCOS-III\Source</state>
+                    <state>$PROJ_DIR$\..\..\BSP\IAR</state>
                 </option>
                 <option>
                     <name>CCStdIncCheck</name>
@@ -775,7 +776,7 @@
                 </option>
                 <option>
                     <name>IlinkIcfFile</name>
-                    <state>E:\ucosiii\Micrium_STM32F429II-SK_OS3\Micrium\Examples\ST\STM32F429II-SK\BSP\IAR\stm32f407xE.icf</state>
+                    <state>$TOOLKIT_DIR$\config\linker\ST\stm32f407xE.icf</state>
                 </option>
                 <option>
                     <name>IlinkIcfFileSlave</name>
@@ -1150,7 +1151,7 @@
                 </option>
                 <option>
                     <name>RTConfigPath2</name>
-                    <state>$TOOLKIT_DIR$\INC\c\DLib_Config_Normal.h</state>
+                    <state>$TOOLKIT_DIR$\inc\c\DLib_Config_Normal.h</state>
                 </option>
                 <option>
                     <name>GBECoreSlave</name>
@@ -2100,6 +2101,12 @@
         </file>
         <file>
             <name>$PROJ_DIR$\..\stm32f4xx_conf.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\w5500.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\w5500.h</name>
         </file>
     </group>
     <group>

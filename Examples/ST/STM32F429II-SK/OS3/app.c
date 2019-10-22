@@ -164,7 +164,7 @@ static  void  AppTaskStart (void *p_arg)
 
     while (DEF_TRUE) {                                          /* Task body, always written as an infinite loop.       */
 
-        OSTimeDlyHMSM(0u, 0u, 0u, 100u,
+        OSTimeDlyHMSM(0u, 0u, 2u, 100u,
                       OS_OPT_TIME_HMSM_STRICT,
                       &err);
         /* do something here */
@@ -251,6 +251,7 @@ static  void  AppObjCreate (void)
 void  App_TaskEq0Fp (void  *p_arg)
 {
 		OS_ERR  err;
+	#if 0
     Load_Net_Parameters();		//装载网络参数	
 		W5500_Hardware_Reset();		//硬件复位W5500
 		W5500_Initialization();		//W5500初始货配置
@@ -279,4 +280,13 @@ void  App_TaskEq0Fp (void  *p_arg)
         /* output your data by terminal */
         APP_TRACE_INFO(("Eq0 Task Running ....\n"));     
     }
+		#else 
+    while (DEF_TRUE) {
+			 APP_TRACE_INFO(("Running ....\n"));     
+			OSTimeDlyHMSM(0u, 0u, 1u, 500u,
+					OS_OPT_TIME_HMSM_STRICT,
+					&err);
+		}			
+		
+		#endif 
 }
