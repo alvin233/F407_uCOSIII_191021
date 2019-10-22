@@ -60,6 +60,7 @@ void W5500_GPIO_Configuration(void)
 {
 
     GPIO_InitTypeDef  GPIO_InitStructure;
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);//使能GPIOB时钟
 #if 1
         /* W5500_INT引脚初始化配置(PC4) */	
 	GPIO_InitStructure.GPIO_Pin = W5500_INT_Pin;
@@ -89,7 +90,8 @@ void W5500_GPIO_Configuration(void)
 	BSP_IntVectSet(BSP_INT_ID_EXTI4, EXTI4_IRQHandler); //MY_BSP_IntHandlerUSART2
 	BSP_IntEn(BSP_INT_ID_EXTI4);
 #endif
-        	/* W5500_RST引脚初始化配置(PC5) */
+        //RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);//使能GPIOD时钟
+        /* W5500_RST引脚初始化配置(PB11) */
 	GPIO_InitStructure.GPIO_Pin  = W5500_RST_Pin;
 	GPIO_InitStructure.GPIO_Speed=GPIO_Speed_25MHz;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;// GPIO_Mode_Out_PP;
@@ -97,6 +99,14 @@ void W5500_GPIO_Configuration(void)
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;// floating
 	GPIO_Init(W5500_RST_PORT, &GPIO_InitStructure);
 	GPIO_ResetBits(W5500_RST_PORT, W5500_RST_Pin);
+        /* W5500_SCS 引脚初始化配置(PB12) */
+	GPIO_InitStructure.GPIO_Pin  = W5500_SCS_Pin;
+	GPIO_InitStructure.GPIO_Speed=GPIO_Speed_25MHz;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;// GPIO_Mode_Out_PP;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;// GPIO_Mode_Out_PP;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;// floating
+	GPIO_Init(W5500_RST_PORT, &GPIO_InitStructure);
+	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);
 }
 
 
@@ -110,24 +120,29 @@ void W5500_GPIO_Configuration(void)
 *******************************************************************************/
 void SPI_Configuration(void)
 {
-	SPI_InitTypeDef  SPI_InitStructure;
-  GPIO_InitTypeDef GPIO_InitStructure;
-  
-	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);//使能GPIOD时钟
+        SPI_InitTypeDef  SPI_InitStructure;
+        GPIO_InitTypeDef GPIO_InitStructure;
+        /* GPIO Init */
+        /* enable AHB1 */
+        RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);//使能GPIOD时钟
 
-	GPIO_InitStructure.GPIO_Pin = W5500_SPI_CLK_Pin |W5500_SPI_MISO_Pin | W5500_SPI_MOSI_Pin;//13是sck，14是miso，12片选
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;//推挽输出
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;////下拉	
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;//普通输出模式 GPIO_Mode_OUT
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;//100MHz
-  GPIO_Init(GPIOB, &GPIO_InitStructure);//初始化GPIOD
-	
-  GPIO_SetBits(GPIOB,W5500_SPI_CLK_Pin |W5500_SPI_MISO_Pin | W5500_SPI_MOSI_Pin);
-	
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_15;			 //MOSI
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;//下拉
-  GPIO_Init(GPIOB, &GPIO_InitStructure);	
+        GPIO_InitStructure.GPIO_Pin = W5500_SPI_CLK_Pin |W5500_SPI_MISO_Pin | W5500_SPI_MOSI_Pin;// Pin selection
+        GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;//推挽输出
+        GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;////下拉	
+        GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;//普通输出模式 GPIO_Mode_OUT
+        GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;//100MHz
+        GPIO_Init(GPIOB, &GPIO_InitStructure);//初始化GPIOD
+        //打开引脚的复用功能
+        GPIO_PinAFConfig(GPIOB,GPIO_PinSource13,GPIO_AF_SPI2);  
+        GPIO_PinAFConfig(GPIOB,GPIO_PinSource14,GPIO_AF_SPI2);
+        GPIO_PinAFConfig(GPIOB,GPIO_PinSource15,GPIO_AF_SPI2);
+
+        // GPIO_SetBits(GPIOB,W5500_SPI_CLK_Pin |W5500_SPI_MISO_Pin | W5500_SPI_MOSI_Pin);
+#if 0 
+        GPIO_InitStructure.GPIO_Pin = GPIO_Pin_15;			 //MOSI
+        GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+        GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;//下拉
+        GPIO_Init(GPIOB, &GPIO_InitStructure);	
 
 	/* 初始化CS引脚 */
 	GPIO_InitStructure.GPIO_Pin = W5500_SPI_SCS_Pin;
@@ -137,20 +152,21 @@ void SPI_Configuration(void)
 	// GPIO_InitStructure.GPIO_Mode=GPIO_Mode_Out_PP;
 	GPIO_Init(W5500_SCS_PORT, &GPIO_InitStructure);
 	GPIO_SetBits(W5500_SCS_PORT, W5500_SPI_SCS_Pin);
-
-	/* 初始化配置STM32 SPI2 */
+#endif	
+    /* GPIO AF Function Eanble */
+    /* 初始化配置STM32 SPI2 */
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2,ENABLE);  //时钟
 	SPI_InitStructure.SPI_Direction=SPI_Direction_2Lines_FullDuplex;	//SPI设置为双线双向全双工
 	SPI_InitStructure.SPI_Mode=SPI_Mode_Master;							//设置为主SPI
 	SPI_InitStructure.SPI_DataSize=SPI_DataSize_8b;						//SPI发送接收8位帧结构
-	SPI_InitStructure.SPI_CPOL=SPI_CPOL_Low;							//时钟悬空低
+	SPI_InitStructure.SPI_CPOL=SPI_CPOL_Low; //时钟悬空低 SPI_CPOL_Low
 	SPI_InitStructure.SPI_CPHA=SPI_CPHA_1Edge;							//数据捕获于第1个时钟沿
 	SPI_InitStructure.SPI_NSS=SPI_NSS_Soft;								//NSS由外部管脚管理
-	SPI_InitStructure.SPI_BaudRatePrescaler=SPI_BaudRatePrescaler_2;	//波特率预分频值为2
+	SPI_InitStructure.SPI_BaudRatePrescaler=SPI_BaudRatePrescaler_2;	//波特率预分频值为2 SPI_BaudRatePrescaler_2
 	SPI_InitStructure.SPI_FirstBit=SPI_FirstBit_MSB;					//数据传输从MSB位开始
 	SPI_InitStructure.SPI_CRCPolynomial=7;								//CRC多项式为7
 	SPI_Init(SPI2,&SPI_InitStructure);									//根据SPI_InitStruct中指定的参数初始化外设SPI1寄存器
-
-	SPI_Cmd(SPI2,ENABLE);	//STM32使能SPI1
+	SPI_Cmd(SPI2,ENABLE);	//STM32使能SPI2
 }
 /*******************************************************************************
 * 函数名  : SPI1_Send_Byte
@@ -162,8 +178,8 @@ void SPI_Configuration(void)
 *******************************************************************************/
 void SPI2_Send_Byte(unsigned char dat)
 {
-	SPI_I2S_SendData(SPI2,dat);//写1个字节数据
-	while(SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_TXE) == RESET);//等待数据寄存器空
+	SPI_I2S_SendData(SPI_SEL,dat);//写1个字节数据
+	while(SPI_I2S_GetFlagStatus(SPI_SEL, SPI_I2S_FLAG_TXE) == RESET);//等待数据寄存器空
 }
 
 /*******************************************************************************
@@ -196,7 +212,7 @@ void Load_Net_Parameters(void)
 	IP_Addr[0]=192;//加载本机IP地址
 	IP_Addr[1]=168;
 	IP_Addr[2]=15;
-	IP_Addr[3]=1;
+	IP_Addr[3]=3;
 
 	S0_Port[0] = 0x13;//加载端口0的端口号5000 
 	S0_Port[1] = 0x88;
@@ -294,13 +310,13 @@ void W5500_Init(void)
 *******************************************************************************/
 void Write_W5500_1Byte(unsigned short reg, unsigned char dat)
 {
-	GPIO_ResetBits(W5500_SCS_PORT, W5500_SPI_SCS_Pin);//置W5500的SCS为低电平
+	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);//置W5500的SCS为低电平
 
 	SPI1_Send_Short(reg);//通过SPI1写16位寄存器地址
 	SPI1_Send_Byte(FDM1|RWB_WRITE|COMMON_R);//通过SPI1写控制字节,1个字节数据长度,写数据,选择通用寄存器
 	SPI1_Send_Byte(dat);//写1个字节数据
 
-	GPIO_SetBits(W5500_SCS_PORT, W5500_SPI_SCS_Pin); //置W5500的SCS为高电平
+	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin); //置W5500的SCS为高电平
 }
 /*******************************************************************************
 * 函数名  : Write_W5500_nByte
@@ -314,7 +330,7 @@ void Write_W5500_nByte(unsigned short reg, unsigned char *dat_ptr, unsigned shor
 {
 	unsigned short i;
 
-	GPIO_ResetBits(W5500_SCS_PORT, W5500_SPI_SCS_Pin);//置W5500的SCS为低电平	
+	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);//置W5500的SCS为低电平	
 		
 	SPI1_Send_Short(reg);//通过SPI1写16位寄存器地址
 	SPI1_Send_Byte(VDM|RWB_WRITE|COMMON_R);//通过SPI1写控制字节,N个字节数据长度,写数据,选择通用寄存器
@@ -324,7 +340,7 @@ void Write_W5500_nByte(unsigned short reg, unsigned char *dat_ptr, unsigned shor
 		SPI1_Send_Byte(*dat_ptr++);//写一个字节数据
 	}
 
-	GPIO_SetBits(W5500_SCS_PORT, W5500_SPI_SCS_Pin); //置W5500的SCS为高电平
+	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin); //置W5500的SCS为高电平
 }
 /*******************************************************************************
 * 函数名  : SPI1_Send_Short
@@ -349,13 +365,13 @@ void SPI1_Send_Short(unsigned short dat)
 *******************************************************************************/
 void Write_W5500_SOCK_1Byte(SOCKET s, unsigned short reg, unsigned char dat)
 {
-	GPIO_ResetBits(W5500_SCS_PORT, W5500_SPI_SCS_Pin);//置W5500的SCS为低电平	
+	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);//置W5500的SCS为低电平	
 		
 	SPI1_Send_Short(reg);//通过SPI1写16位寄存器地址
 	SPI1_Send_Byte(FDM1|RWB_WRITE|(s*0x20+0x08));//通过SPI1写控制字节,1个字节数据长度,写数据,选择端口s的寄存器
 	SPI1_Send_Byte(dat);//写1个字节数据
 
-	GPIO_SetBits(W5500_SCS_PORT, W5500_SPI_SCS_Pin); //置W5500的SCS为高电平
+	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin); //置W5500的SCS为高电平
 }
 /*******************************************************************************
 * 函数名  : Write_W5500_2Byte
@@ -367,13 +383,13 @@ void Write_W5500_SOCK_1Byte(SOCKET s, unsigned short reg, unsigned char dat)
 *******************************************************************************/
 void Write_W5500_2Byte(unsigned short reg, unsigned short dat)
 {
-	GPIO_ResetBits(W5500_SCS_PORT, W5500_SPI_SCS_Pin);//置W5500的SCS为低电平
+	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);//置W5500的SCS为低电平
 		
 	SPI1_Send_Short(reg);//通过SPI1写16位寄存器地址
 	SPI1_Send_Byte(FDM2|RWB_WRITE|COMMON_R);//通过SPI1写控制字节,2个字节数据长度,写数据,选择通用寄存器
 	SPI1_Send_Short(dat);//写16位数据
 
-	GPIO_SetBits(W5500_SCS_PORT, W5500_SPI_SCS_Pin); //置W5500的SCS为高电平
+	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin); //置W5500的SCS为高电平
 }
 /*******************************************************************************
 * 函数名  : SPI1_Send_Byte
@@ -385,8 +401,8 @@ void Write_W5500_2Byte(unsigned short reg, unsigned short dat)
 *******************************************************************************/
 void SPI1_Send_Byte(unsigned char dat)
 {
-	SPI_I2S_SendData(SPI1,dat);//写1个字节数据
-	while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);//等待数据寄存器空
+	SPI_I2S_SendData(SPI_SEL,dat);//写1个字节数据
+	while(SPI_I2S_GetFlagStatus(SPI_SEL, SPI_I2S_FLAG_TXE) == RESET);//等待数据寄存器空
 }
 
 /*******************************************************************************
@@ -454,7 +470,7 @@ unsigned char Detect_Gateway(void)
 *******************************************************************************/
 void Write_W5500_SOCK_4Byte(SOCKET s, unsigned short reg, unsigned char *dat_ptr)
 {
-	GPIO_ResetBits(W5500_SCS_PORT, W5500_SPI_SCS_Pin);//置W5500的SCS为低电平
+	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);//置W5500的SCS为低电平
 			
 	SPI1_Send_Short(reg);//通过SPI1写16位寄存器地址
 	SPI1_Send_Byte(FDM4|RWB_WRITE|(s*0x20+0x08));//通过SPI1写控制字节,4个字节数据长度,写数据,选择端口s的寄存器
@@ -464,7 +480,7 @@ void Write_W5500_SOCK_4Byte(SOCKET s, unsigned short reg, unsigned char *dat_ptr
 	SPI1_Send_Byte(*dat_ptr++);//写第3个字节数据
 	SPI1_Send_Byte(*dat_ptr++);//写第4个字节数据
 
-	GPIO_SetBits(W5500_SCS_PORT, W5500_SPI_SCS_Pin); //置W5500的SCS为高电平
+	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin); //置W5500的SCS为高电平
 }
 /*******************************************************************************
 * 函数名  : Read_W5500_SOCK_1Byte
@@ -478,16 +494,16 @@ unsigned char Read_W5500_SOCK_1Byte(SOCKET s, unsigned short reg)
 {
 	unsigned char i;
 
-	GPIO_ResetBits(W5500_SCS_PORT, W5500_SPI_SCS_Pin);//置W5500的SCS为低电平
+	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);//置W5500的SCS为低电平
 			
 	SPI1_Send_Short(reg);//通过SPI1写16位寄存器地址
 	SPI1_Send_Byte(FDM1|RWB_READ|(s*0x20+0x08));//通过SPI1写控制字节,1个字节数据长度,读数据,选择端口s的寄存器
 
-	i=SPI_I2S_ReceiveData(SPI1);
+	i=SPI_I2S_ReceiveData(SPI_SEL);
 	SPI1_Send_Byte(0x00);//发送一个哑数据
-	i=SPI_I2S_ReceiveData(SPI1);//读取1个字节数据
+	i=SPI_I2S_ReceiveData(SPI_SEL);//读取1个字节数据
 
-	GPIO_SetBits(W5500_SCS_PORT, W5500_SPI_SCS_Pin);//置W5500的SCS为高电平
+	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin);//置W5500的SCS为高电平
 	return i;//返回读取到的寄存器数据
 }
 
@@ -551,13 +567,13 @@ void Socket_Init(SOCKET s)
 *******************************************************************************/
 void Write_W5500_SOCK_2Byte(SOCKET s, unsigned short reg, unsigned short dat)
 {
-	GPIO_ResetBits(W5500_SCS_PORT, W5500_SPI_SCS_Pin);//置W5500的SCS为低电平
+	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);//置W5500的SCS为低电平
 			
 	SPI1_Send_Short(reg);//通过SPI1写16位寄存器地址
 	SPI1_Send_Byte(FDM2|RWB_WRITE|(s*0x20+0x08));//通过SPI1写控制字节,2个字节数据长度,写数据,选择端口s的寄存器
 	SPI1_Send_Short(dat);//写16位数据
 
-	GPIO_SetBits(W5500_SCS_PORT, W5500_SPI_SCS_Pin); //置W5500的SCS为高电平
+	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin); //置W5500的SCS为高电平
 }
 /*******************************************************************************
 * 函数名  : W5500_Hardware_Reset
@@ -592,18 +608,18 @@ void W5500_Hardware_Reset(void)
 *******************************************************************************/
 unsigned char Read_W5500_1Byte(unsigned short reg)
 {
-	unsigned char i;
+	static unsigned char i;
 
-	GPIO_ResetBits(W5500_SCS_PORT, W5500_SPI_SCS_Pin);//置W5500的SCS为低电平
+	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);//置W5500的SCS为低电平
 			
 	SPI1_Send_Short(reg);//通过SPI1写16位寄存器地址
 	SPI1_Send_Byte(FDM1|RWB_READ|COMMON_R);//通过SPI1写控制字节,1个字节数据长度,读数据,选择通用寄存器
 
-	i=SPI_I2S_ReceiveData(SPI1);
+	i=SPI_I2S_ReceiveData(SPI_SEL);
 	SPI1_Send_Byte(0x00);//发送一个哑数据
-	i=SPI_I2S_ReceiveData(SPI1);//读取1个字节数据
+	i=SPI_I2S_ReceiveData(SPI_SEL);//读取1个字节数据
 
-	GPIO_SetBits(W5500_SCS_PORT, W5500_SPI_SCS_Pin);//置W5500的SCS为高电平
+	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin);//置W5500的SCS为高电平
 	return i;//返回读取到的寄存器数据
 }
 /*******************************************************************************
@@ -658,7 +674,7 @@ unsigned char Socket_Connect(SOCKET s)
 	Write_W5500_SOCK_1Byte(s,Sn_MR,MR_TCP);//设置socket为TCP模式
 	Write_W5500_SOCK_1Byte(s,Sn_CR,OPEN);//打开Socket
 	//Delay(5);//延时5ms
-	OSTimeDlyHMSM(0u, 0u, 0u, 5u,
+	OSTimeDlyHMSM(0u, 0u, 0u, 8u,
 					OS_OPT_TIME_HMSM_STRICT,
 					&err);
 	if(Read_W5500_SOCK_1Byte(s,Sn_SR)!=SOCK_INIT)//如果socket打开失败
@@ -842,7 +858,7 @@ void Write_SOCK_Data_Buffer(SOCKET s, unsigned char *dat_ptr, unsigned short siz
 	offset1=offset;
 	offset&=(S_TX_SIZE-1);//计算实际的物理地址
 
-	GPIO_ResetBits(W5500_SCS_PORT, W5500_SPI_SCS_Pin);//置W5500的SCS为低电平
+	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);//置W5500的SCS为低电平
 
 	SPI1_Send_Short(offset);//写16位地址
 	SPI1_Send_Byte(VDM|RWB_WRITE|(s*0x20+0x10));//写控制字节,N个字节数据长度,写数据,选择端口s的寄存器
@@ -861,9 +877,9 @@ void Write_SOCK_Data_Buffer(SOCKET s, unsigned char *dat_ptr, unsigned short siz
 		{
 			SPI1_Send_Byte(*dat_ptr++);//写入一个字节的数据
 		}
-		GPIO_SetBits(W5500_SCS_PORT, W5500_SPI_SCS_Pin); //置W5500的SCS为高电平
+		GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin); //置W5500的SCS为高电平
 
-		GPIO_ResetBits(W5500_SCS_PORT, W5500_SPI_SCS_Pin);//置W5500的SCS为低电平
+		GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);//置W5500的SCS为低电平
 
 		SPI1_Send_Short(0x00);//写16位地址
 		SPI1_Send_Byte(VDM|RWB_WRITE|(s*0x20+0x10));//写控制字节,N个字节数据长度,写数据,选择端口s的寄存器
@@ -873,7 +889,7 @@ void Write_SOCK_Data_Buffer(SOCKET s, unsigned char *dat_ptr, unsigned short siz
 			SPI1_Send_Byte(*dat_ptr++);//写入一个字节的数据
 		}
 	}
-	GPIO_SetBits(W5500_SCS_PORT, W5500_SPI_SCS_Pin); //置W5500的SCS为高电平
+	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin); //置W5500的SCS为高电平
 
 	offset1+=size;//更新实际物理地址,即下次写待发送数据到发送数据缓冲区的起始地址
 	Write_W5500_SOCK_2Byte(s, Sn_TX_WR, offset1);
@@ -891,19 +907,19 @@ unsigned short Read_W5500_SOCK_2Byte(SOCKET s, unsigned short reg)
 {
 	unsigned short i;
 
-	GPIO_ResetBits(W5500_SCS_PORT, W5500_SPI_SCS_Pin);//置W5500的SCS为低电平
+	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);//置W5500的SCS为低电平
 			
 	SPI1_Send_Short(reg);//通过SPI1写16位寄存器地址
 	SPI1_Send_Byte(FDM2|RWB_READ|(s*0x20+0x08));//通过SPI1写控制字节,2个字节数据长度,读数据,选择端口s的寄存器
 
-	i=SPI_I2S_ReceiveData(SPI1);
+	i=SPI_I2S_ReceiveData(SPI_SEL);
 	SPI1_Send_Byte(0x00);//发送一个哑数据
-	i=SPI_I2S_ReceiveData(SPI1);//读取高位数据
+	i=SPI_I2S_ReceiveData(SPI_SEL);//读取高位数据
 	SPI1_Send_Byte(0x00);//发送一个哑数据
 	i*=256;
-	i+=SPI_I2S_ReceiveData(SPI1);//读取低位数据
+	i+=SPI_I2S_ReceiveData(SPI_SEL);//读取低位数据
 
-	GPIO_SetBits(W5500_SCS_PORT, W5500_SPI_SCS_Pin);//置W5500的SCS为高电平
+	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin);//置W5500的SCS为高电平
 	return i;//返回读取到的寄存器数据
 }
 
@@ -930,18 +946,18 @@ unsigned short Read_SOCK_Data_Buffer(SOCKET s, unsigned char *dat_ptr)
 	offset1=offset;
 	offset&=(S_RX_SIZE-1);//计算实际的物理地址
 
-	GPIO_ResetBits(W5500_SCS_PORT, W5500_SPI_SCS_Pin);//置W5500的SCS为低电平
+	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);//置W5500的SCS为低电平
 
 	SPI1_Send_Short(offset);//写16位地址
 	SPI1_Send_Byte(VDM|RWB_READ|(s*0x20+0x18));//写控制字节,N个字节数据长度,读数据,选择端口s的寄存器
-	j=SPI_I2S_ReceiveData(SPI1);
+	j=SPI_I2S_ReceiveData(SPI_SEL);
 	
 	if((offset+rx_size)<S_RX_SIZE)//如果最大地址未超过W5500接收缓冲区寄存器的最大地址
 	{
 		for(i=0;i<rx_size;i++)//循环读取rx_size个字节数据
 		{
 			SPI1_Send_Byte(0x00);//发送一个哑数据
-			j=SPI_I2S_ReceiveData(SPI1);//读取1个字节数据
+			j=SPI_I2S_ReceiveData(SPI_SEL);//读取1个字节数据
 			*dat_ptr=j;//将读取到的数据保存到数据保存缓冲区
 			dat_ptr++;//数据保存缓冲区指针地址自增1
 		}
@@ -952,27 +968,27 @@ unsigned short Read_SOCK_Data_Buffer(SOCKET s, unsigned char *dat_ptr)
 		for(i=0;i<offset;i++)//循环读取出前offset个字节数据
 		{
 			SPI1_Send_Byte(0x00);//发送一个哑数据
-			j=SPI_I2S_ReceiveData(SPI1);//读取1个字节数据
+			j=SPI_I2S_ReceiveData(SPI_SEL);//读取1个字节数据
 			*dat_ptr=j;//将读取到的数据保存到数据保存缓冲区
 			dat_ptr++;//数据保存缓冲区指针地址自增1
 		}
-		GPIO_SetBits(W5500_SCS_PORT, W5500_SPI_SCS_Pin); //置W5500的SCS为高电平
+		GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin); //置W5500的SCS为高电平
 
-		GPIO_ResetBits(W5500_SCS_PORT, W5500_SPI_SCS_Pin);//置W5500的SCS为低电平
+		GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);//置W5500的SCS为低电平
 
 		SPI1_Send_Short(0x00);//写16位地址
 		SPI1_Send_Byte(VDM|RWB_READ|(s*0x20+0x18));//写控制字节,N个字节数据长度,读数据,选择端口s的寄存器
-		j=SPI_I2S_ReceiveData(SPI1);
+		j=SPI_I2S_ReceiveData(SPI_SEL);
 
 		for(;i<rx_size;i++)//循环读取后rx_size-offset个字节数据
 		{
 			SPI1_Send_Byte(0x00);//发送一个哑数据
-			j=SPI_I2S_ReceiveData(SPI1);//读取1个字节数据
+			j=SPI_I2S_ReceiveData(SPI_SEL);//读取1个字节数据
 			*dat_ptr=j;//将读取到的数据保存到数据保存缓冲区
 			dat_ptr++;//数据保存缓冲区指针地址自增1
 		}
 	}
-	GPIO_SetBits(W5500_SCS_PORT, W5500_SPI_SCS_Pin); //置W5500的SCS为高电平
+	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin); //置W5500的SCS为高电平
 
 	offset1+=rx_size;//更新实际物理地址,即下次读取接收到的数据的起始地址
 	Write_W5500_SOCK_2Byte(s, Sn_RX_RD, offset1);

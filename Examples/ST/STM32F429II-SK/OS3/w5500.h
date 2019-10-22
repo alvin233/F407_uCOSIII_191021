@@ -204,6 +204,7 @@
 #define S_TX_SIZE	2048  	/*定义Socket发送缓冲区的大小，可以根据W5500_TMSR的设置修改 */
 
 /***************----- W5500 GPIO定义 -----***************/
+#define SPI_SEL   SPI2
 #define W5500_SPI_CLK_Pin GPIO_Pin_13
 #define W5500_SPI_CLK_PORT	GPIOB
 
@@ -213,11 +214,11 @@
 #define W5500_SPI_MOSI_Pin GPIO_Pin_15
 #define W5500_SPI_MOSI_PORT	GPIOB
 
-#define W5500_SPI_SCS_Pin		GPIO_Pin_12	//定义W5500的CS引脚	 
+#define W5500_SCS_Pin		GPIO_Pin_12	//定义W5500的CS引脚	 
 #define W5500_SCS_PORT	GPIOB
 	
-#define W5500_RST_Pin		GPIO_Pin_15	//定义W5500的RST引脚
-#define W5500_RST_PORT	GPIOC
+#define W5500_RST_Pin		GPIO_Pin_11	//定义W5500的RST引脚
+#define W5500_RST_PORT	GPIOB
 
 #define W5500_INT_Pin		GPIO_Pin_4	//定义W5500的INT引脚
 #define W5500_INT_PORT	GPIOC

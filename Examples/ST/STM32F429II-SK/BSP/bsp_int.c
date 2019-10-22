@@ -416,7 +416,7 @@ void EXTI4_IRQHandler(void)
   if(EXTI_GetITStatus(EXTI_Line4) != RESET)
   {
     EXTI_ClearITPendingBit(EXTI_Line4);
-    APP_TRACE_INFO(("Exti4\n"));     
+    //APP_TRACE_INFO(("Exti4\n"));     
     W5500_Interrupt=1;
   }
   OSIntExit();
