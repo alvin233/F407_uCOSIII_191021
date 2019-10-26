@@ -58,6 +58,9 @@ static  CPU_STK  AppTaskStartStk[APP_CFG_TASK_START_STK_SIZE];
 static  OS_TCB       App_TaskEq0FpTCB;
 static  CPU_STK      App_TaskEq0FpStk[APP_CFG_TASK_EQ_STK_SIZE];
 
+static  OS_TCB       App_TaskW5500TCB;
+static  CPU_STK      App_TaskW5500Stk[APP_CFG_TASK_W5500_STK_SIZE];
+
 /*
 *********************************************************************************************************
 *                                         FUNCTION PROTOTYPES
@@ -69,7 +72,7 @@ static  void  AppTaskCreate         (void);
 static  void  AppObjCreate          (void);
 
 static  void  App_TaskEq0Fp         (void  *p_arg);             /* Floating Point Equation 0 task.                      */
-
+static  void  App_TaskW5500         (void  *p_arg); 
 /*
 *********************************************************************************************************
 *                                                main()
@@ -208,6 +211,20 @@ static  void  AppTaskCreate (void)
                  (void        *) 0,
                  (OS_OPT       )(OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR | OS_OPT_TASK_SAVE_FP),
                  (OS_ERR      *)&os_err);
+								 
+			OSTaskCreate((OS_TCB  *)&App_TaskW5500TCB,
+							 (CPU_CHAR    *)"W5500",
+							 (OS_TASK_PTR  ) App_TaskW5500, 
+							 (void        *) 0,
+							 (OS_PRIO      ) APP_CFG_TASK_W5500_PRIO,
+							 (CPU_STK     *)&App_TaskW5500Stk[0],
+							 (CPU_STK_SIZE ) App_TaskEq0FpStk[APP_CFG_TASK_W5500_STK_SIZE / 10u],
+							 (CPU_STK_SIZE ) APP_CFG_TASK_W5500_STK_SIZE,
+							 (OS_MSG_QTY   ) 0u,
+							 (OS_TICK      ) 0u,
+							 (void        *) 0,
+							 (OS_OPT       )(OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR | OS_OPT_TASK_SAVE_FP),
+							 (OS_ERR      *)&os_err);						 
 }
 
 
@@ -291,3 +308,18 @@ void  App_TaskEq0Fp (void  *p_arg)
   //APP_TRACE_INFO(("Eq0 Task Running ....\n"));     
   }
 }
+void  App_TaskW5500 (void  *p_arg)
+{
+  OS_ERR  err;
+
+  while (DEF_TRUE) {
+  
+  /* do something here */      
+  OSTimeDlyHMSM(0u, 0u, 0u, 10u,
+  OS_OPT_TIME_HMSM_STRICT,
+  &err);
+  /* output your data by terminal */
+  //APP_TRACE_INFO(("Eq0 Task Running ....\n"));     
+  }
+}
+
