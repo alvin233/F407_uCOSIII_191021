@@ -212,22 +212,20 @@ static  void  AppTaskCreate (void)
                  (OS_OPT       )(OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR | OS_OPT_TASK_SAVE_FP),
                  (OS_ERR      *)&os_err);
 								 
-		OSTaskCreate((OS_TCB  *)&App_TaskW5500TCB,
-						 (CPU_CHAR    *)"W5500",
-						 (OS_TASK_PTR  ) App_TaskW5500, 
-						 (void        *) 0,
-						 (OS_PRIO      ) APP_CFG_TASK_W5500_PRIO,
-						 (CPU_STK     *)&App_TaskW5500Stk[0],
-						 (CPU_STK_SIZE ) App_TaskEq0FpStk[APP_CFG_TASK_W5500_STK_SIZE / 10u],
-						 (CPU_STK_SIZE ) APP_CFG_TASK_W5500_STK_SIZE,
-						 (OS_MSG_QTY   ) 0u,
-						 (OS_TICK      ) 0u,
-						 (void        *) 0,
-						 (OS_OPT       )(OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR | OS_OPT_TASK_SAVE_FP),
-						 (OS_ERR      *)&os_err);						 
+		OSTaskCreate((OS_TCB      *)&App_TaskW5500TCB,
+                (CPU_CHAR     *)"W5500",
+                (OS_TASK_PTR   ) App_TaskW5500, 
+                (void        *) 0,
+                (OS_PRIO      ) APP_CFG_TASK_W5500_PRIO,
+                (CPU_STK     *)&App_TaskW5500Stk[0],
+                (CPU_STK_SIZE ) App_TaskEq0FpStk[APP_CFG_TASK_W5500_STK_SIZE / 10u],
+                (CPU_STK_SIZE ) APP_CFG_TASK_W5500_STK_SIZE,
+                (OS_MSG_QTY   ) 0u,
+                (OS_TICK      ) 0u,
+                (void        *) 0,
+                (OS_OPT       )(OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR | OS_OPT_TASK_SAVE_FP),
+                (OS_ERR      *)&os_err);						 
 }
-
-
 /*
 *********************************************************************************************************
 *                                          AppObjCreate()
@@ -248,8 +246,6 @@ static  void  AppObjCreate (void)
 {
 
 }
-
-
 /*
 *********************************************************************************************************
 *                                             App_TaskEq0Fp()
@@ -310,10 +306,10 @@ void  App_TaskEq0Fp (void  *p_arg)
   }
 #endif 
   while (DEF_TRUE) {
-	  OSTimeDlyHMSM(0u, 0u, 2u, 10u,
-  OS_OPT_TIME_HMSM_STRICT,
-  &err);
-}
+      OSTimeDlyHMSM(0u, 0u, 2u, 10u,
+        OS_OPT_TIME_HMSM_STRICT,
+        &err);
+  }
 }
 /*
 *********************************************************************************************************
@@ -343,7 +339,6 @@ void  App_TaskW5500 (void  *p_arg)
   W5500_Initialization();	
   while (DEF_TRUE) {
   W5500_Socket_Set();
-  
   if(W5500_Interrupt)	
   {
     /* Interrupt happened */

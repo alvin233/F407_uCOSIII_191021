@@ -66,7 +66,7 @@
 #define  APP_CFG_TASK_START_STK_SIZE                     128u
 #define  APP_CFG_TASK_BLINKY_STK_SIZE                    128u
 #define  APP_CFG_TASK_EQ_STK_SIZE                        512u
-#define		APP_CFG_TASK_W5500_STK_SIZE											512u
+#define	 APP_CFG_TASK_W5500_STK_SIZE					 512u
 
 /*
 *********************************************************************************************************

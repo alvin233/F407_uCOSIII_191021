@@ -1,11 +1,3 @@
-/**********************************************************************************
- * ÎÄ¼şÃû  £ºW5500.c
- * ÃèÊö    £ºW5500 Çı¶¯º¯Êı¿â         
- * ¿â°æ±¾  £ºST_v3.5
-
- * ÌÔ±¦    £ºhttp://yixindianzikeji.taobao.com/
-**********************************************************************************/
-
 #include "stm32f4xx.h"
 #include "stm32f4xx_spi.h"				
 #include "W5500.h"	
@@ -13,48 +5,84 @@
 #include  <bsp.h>
 #include  <os.h>
 #include <string.h>
-/***************----- ÍøÂç²ÎÊı±äÁ¿¶¨Òå -----***************/
-unsigned char Gateway_IP[4];//Íø¹ØIPµØÖ· 
-unsigned char Sub_Mask[4];	//×ÓÍøÑÚÂë 
-unsigned char Phy_Addr[6];	//ÎïÀíµØÖ·(MAC) 
-unsigned char IP_Addr[4];	//±¾»úIPµØÖ· 
+/**********************************************************************************
+ * File name : W5500.c
+ * Description   : driver      
+ * Version : ST_v3.5
 
-unsigned char S0_Port[2];	//¶Ë¿Ú0µÄ¶Ë¿ÚºÅ(5000) 
-unsigned char S0_DIP[4];	//¶Ë¿Ú0Ä¿µÄIPµØÖ· 
-unsigned char S0_DPort[2];	//¶Ë¿Ú0Ä¿µÄ¶Ë¿ÚºÅ(6000) 
+ * Link : http://yixindianzikeji.taobao.com/
+**********************************************************************************/
 
-unsigned char UDP_DIPR[4];	//UDP(¹ã²¥)Ä£Ê½,Ä¿µÄÖ÷»úIPµØÖ·
-unsigned char UDP_DPORT[2];	//UDP(¹ã²¥)Ä£Ê½,Ä¿µÄÖ÷»ú¶Ë¿ÚºÅ
 
-/***************----- ¶Ë¿ÚµÄÔËĞĞÄ£Ê½ -----***************/
-unsigned char S0_Mode =3;	//¶Ë¿Ú0µÄÔËĞĞÄ£Ê½,0:TCP·şÎñÆ÷Ä£Ê½,1:TCP¿Í»§¶ËÄ£Ê½,2:UDP(¹ã²¥)Ä£Ê½
-#define TCP_SERVER	0x00	//TCP·şÎñÆ÷Ä£Ê½
-#define TCP_CLIENT	0x01	//TCP¿Í»§¶ËÄ£Ê½ 
-#define UDP_MODE	0x02	//UDP(¹ã²¥)Ä£Ê½ 
+/***************----- Network parameter definition -----***************/
+/* gate way IP address */ 
+unsigned char Gateway_IP[4];
+/* submask ip address */
+unsigned char Sub_Mask[4];	
+/* MAC address */
+unsigned char Phy_Addr[6];	
+/* self IP address */ 
+unsigned char IP_Addr[4];	 
+/* port number of W5500's port 0 */
+unsigned char S0_Port[2];	
+/* port 0 of W5500's destination IP */
+unsigned char S0_DIP[4];	
+/* port 0 of W5500's destination port */
+unsigned char S0_DPort[2];	
+/* UDP broadcast mode, destination IP address */
+unsigned char UDP_DIPR[4];	
+/* UDP broadcast mode, destination IP port */
+unsigned char UDP_DPORT[2];	
 
-/***************----- ¶Ë¿ÚµÄÔËĞĞ×´Ì¬ -----***************/
-unsigned char S0_State =0;	//¶Ë¿Ú0×´Ì¬¼ÇÂ¼,1:¶Ë¿ÚÍê³É³õÊ¼»¯,2¶Ë¿ÚÍê³ÉÁ¬½Ó(¿ÉÒÔÕı³£´«ÊäÊı¾İ) 
-#define S_INIT		0x01	//¶Ë¿ÚÍê³É³õÊ¼»¯ 
-#define S_CONN		0x02	//¶Ë¿ÚÍê³ÉÁ¬½Ó,¿ÉÒÔÕı³£´«ÊäÊı¾İ 
-
-/***************----- ¶Ë¿ÚÊÕ·¢Êı¾İµÄ×´Ì¬ -----***************/
-unsigned char S0_Data;		//¶Ë¿Ú0½ÓÊÕºÍ·¢ËÍÊı¾İµÄ×´Ì¬,1:¶Ë¿Ú½ÓÊÕµ½Êı¾İ,2:¶Ë¿Ú·¢ËÍÊı¾İÍê³É 
-#define S_RECEIVE	 0x01	//¶Ë¿Ú½ÓÊÕµ½Ò»¸öÊı¾İ°ü 
-#define S_TRANSMITOK 0x02	//¶Ë¿Ú·¢ËÍÒ»¸öÊı¾İ°üÍê³É 
-
-/***************----- ¶Ë¿ÚÊı¾İ»º³åÇø -----***************/
-unsigned char Rx_Buffer[2048];	//¶Ë¿Ú½ÓÊÕÊı¾İ»º³åÇø 
-unsigned char Tx_Buffer[2048];	//¶Ë¿Ú·¢ËÍÊı¾İ»º³åÇø 
-
-unsigned char W5500_Interrupt;	//W5500ÖĞ¶Ï±êÖ¾(0:ÎŞÖĞ¶Ï,1:ÓĞÖĞ¶Ï)
-
+/**********************************************************************************
+ * S0_Mode, port 0 operation mode
+ * S0_Mode = TCP_SERVER; TCP servo mode;
+ * S0_Mode = TCP_CLIENT; TCP client mode;    
+ * S0_Mode = UDP_MODE; UDP broadcast mode;
+**********************************************************************************/
+unsigned char S0_Mode =3;	
+/* TCP servo mode */
+#define TCP_SERVER	0x00
+/* TCP client mode */
+#define TCP_CLIENT	0x01
+/* UDP broadcast mode */
+#define UDP_MODE	0x02
+/**********************************************************************************
+ * S0_State, port 0 state
+ * S0_State = S_INIT; port init finished;
+ * S0_State = S_CONN; port connected finished;
+**********************************************************************************/
+unsigned char S0_State =0;	
+/* port has been inited */
+#define S_INIT		0x01	 
+/* port has been connected */
+#define S_CONN		0x02	 
+/**********************************************************************************
+ * S0_Data, port 0 data state
+ * S0_Data = S_RECEIVE; port has received one data pack;
+ * S0_Data = S_TRANSMITOK; port has sended one data pack;
+**********************************************************************************/
+unsigned char S0_Data;	
+#define S_RECEIVE	 0x01	 
+#define S_TRANSMITOK 0x02	 
+/***************----- Data buffer area -----***************/
+/* RX buffer area */
+unsigned char Rx_Buffer[2048];	 
+/* TX buffer area */
+unsigned char Tx_Buffer[2048];	 
+/**********************************************************************************
+ * W5500 interrupt state flag 
+ * W5500_Interrupt = 0; no interruption
+ * W5500_Interrupt = 1; interruption happened
+**********************************************************************************/
+unsigned char W5500_Interrupt;
 /*******************************************************************************
-* º¯ÊıÃû  : W5500_GPIO_Configuration
-* ÃèÊö    : W5500 GPIO³õÊ¼»¯ÅäÖÃ
-* ÊäÈë    : ÎŞ
-* Êä³ö    : ÎŞ
-* ·µ»ØÖµ  : ÎŞ
-* ËµÃ÷    : ÎŞ
+ * Funtion : W5500_GPIO_Configuration
+ * Description : W5500 GPIO configuration
+ * Input : None
+ * Output : None
+ * Return : None
+ * Others : None
 *******************************************************************************/
 void W5500_GPIO_Configuration(void)
 {
@@ -67,333 +95,355 @@ void W5500_GPIO_Configuration(void)
   /* W5500_INT_Pin Init */
   GPIO_InitStructure.GPIO_Pin = W5500_INT_Pin;
   GPIO_InitStructure.GPIO_Speed=GPIO_Speed_50MHz;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN; // GPIO_Mode_IPU
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;// inner pull up       
+	/* GPIO_Mode_IPU */ 
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN; 
+	/* inner pull up */
+  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
   GPIO_Init(W5500_INT_PORT, &GPIO_InitStructure);
   /* W5500_RST_Pin Init */
   GPIO_InitStructure.GPIO_Pin  = W5500_RST_Pin;
   GPIO_InitStructure.GPIO_Speed=GPIO_Speed_25MHz;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;// GPIO_Mode_Out_PP;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;// GPIO_Mode_Out_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;// floating
+	/* GPIO_Mode_Out_PP */
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+	/* GPIO_Mode_Out_PP */
+  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	/* floating */
+  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(W5500_RST_PORT, &GPIO_InitStructure);
   GPIO_ResetBits(W5500_RST_PORT, W5500_RST_Pin);
   /* W5500_SCS_Pin Init */
   GPIO_InitStructure.GPIO_Pin  = W5500_SCS_Pin;
   GPIO_InitStructure.GPIO_Speed=GPIO_Speed_25MHz;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;// GPIO_Mode_Out_PP;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;// GPIO_Mode_Out_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;// floating
+	/* GPIO_Mode_Out_PP */
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+	/* GPIO_Mode_Out_PP */
+  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	/* floating */
+  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(W5500_RST_PORT, &GPIO_InitStructure);
   GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);
-
+	/* EXTI configuration */
   /* for EXTI, must enable RCC_APB2Periph_SYSCFG */
-  RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);//
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
   /* Connect EXTI Line4 to PC4 */
   SYSCFG_EXTILineConfig(EXTI_PortSourceGPIOC, GPIO_PinSource4);
   /* PC4 as W5500 interrupt input */
   EXTI_InitStructure.EXTI_Line = EXTI_Line4;
   EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-  EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;//µÄÀı×ÓÉèÖÃÖĞ¶ÏÏß4ÉÏµÄÖĞ¶ÏÎªÏÂ½µÑØ´¥·¢
+	/* falling edge trigger interrupt */
+  EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
   EXTI_InitStructure.EXTI_LineCmd = ENABLE;
   EXTI_Init(&EXTI_InitStructure);
-  /* Init NVIC */
+  /* NVIC Configuration */
   NVIC_InitStructure.NVIC_IRQChannel = EXTI4_IRQn; 
   NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x02; 
   NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x02; 
   NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE; 
   NVIC_Init(&NVIC_InitStructure);
-  /* enable int in ucos iii */
-  BSP_IntVectSet(BSP_INT_ID_EXTI4, EXTI4_IRQHandler); //MY_BSP_IntHandlerUSART2
+	/* must configure these two steps when using uC/OS-III */
+	/* binding EXTI4 to function EXTI4_IRQHandler*/
+  BSP_IntVectSet(BSP_INT_ID_EXTI4, EXTI4_IRQHandler);
+	/* enable interruption of ucos iii */
   BSP_IntEn(BSP_INT_ID_EXTI4);
 }
 
-
 /*******************************************************************************
-* º¯ÊıÃû  : SPI_Configuration
-* ÃèÊö    : W5500 SPI³õÊ¼»¯ÅäÖÃ(STM32 SPI1)
-* ÊäÈë    : ÎŞ
-* Êä³ö    : ÎŞ
-* ·µ»ØÖµ  : ÎŞ
-* ËµÃ÷    : ÎŞ
+ * Funtion : SPI_Configuration
+ * Description : SPI GPIO and AF function configuration
+ * Input : None
+ * Output : None
+ * Return : None
+ * Others : None
 *******************************************************************************/
 void SPI_Configuration(void)
 {
-        SPI_InitTypeDef  SPI_InitStructure;
-        GPIO_InitTypeDef GPIO_InitStructure;
-        /* GPIO Init */
-        /* enable AHB1 */
-        RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);//Ê¹ÄÜGPIODÊ±ÖÓ
-
-        GPIO_InitStructure.GPIO_Pin = W5500_SPI_CLK_Pin |W5500_SPI_MISO_Pin | W5500_SPI_MOSI_Pin;// Pin selection
-        GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;//ÍÆÍìÊä³ö
-        GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;////ÏÂÀ­	
-        GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;//ÆÕÍ¨Êä³öÄ£Ê½ GPIO_Mode_OUT
-        GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;//100MHz
-        GPIO_Init(GPIOB, &GPIO_InitStructure);//³õÊ¼»¯GPIOD
-        //´ò¿ªÒı½ÅµÄ¸´ÓÃ¹¦ÄÜ
-        GPIO_PinAFConfig(GPIOB,GPIO_PinSource13,GPIO_AF_SPI2);  
-        GPIO_PinAFConfig(GPIOB,GPIO_PinSource14,GPIO_AF_SPI2);
-        GPIO_PinAFConfig(GPIOB,GPIO_PinSource15,GPIO_AF_SPI2);
-    /* GPIO AF Function Eanble */
-    /* ³õÊ¼»¯ÅäÖÃSTM32 SPI2 */
-  RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2,ENABLE);  //Ê±ÖÓ
-	SPI_InitStructure.SPI_Direction=SPI_Direction_2Lines_FullDuplex;	//SPIÉèÖÃÎªË«ÏßË«ÏòÈ«Ë«¹¤
-	SPI_InitStructure.SPI_Mode=SPI_Mode_Master;							//ÉèÖÃÎªÖ÷SPI
-	SPI_InitStructure.SPI_DataSize=SPI_DataSize_8b;						//SPI·¢ËÍ½ÓÊÕ8Î»Ö¡½á¹¹
-	SPI_InitStructure.SPI_CPOL=SPI_CPOL_Low; //Ê±ÖÓĞü¿ÕµÍ SPI_CPOL_Low
-	SPI_InitStructure.SPI_CPHA=SPI_CPHA_1Edge;							//Êı¾İ²¶»ñÓÚµÚ1¸öÊ±ÖÓÑØ
-	SPI_InitStructure.SPI_NSS=SPI_NSS_Soft;								//NSSÓÉÍâ²¿¹Ü½Å¹ÜÀí
-	SPI_InitStructure.SPI_BaudRatePrescaler=SPI_BaudRatePrescaler_2;	//²¨ÌØÂÊÔ¤·ÖÆµÖµÎª2 SPI_BaudRatePrescaler_2
-	SPI_InitStructure.SPI_FirstBit=SPI_FirstBit_MSB;					//Êı¾İ´«Êä´ÓMSBÎ»¿ªÊ¼
-	SPI_InitStructure.SPI_CRCPolynomial=7;								//CRC¶àÏîÊ½Îª7
-	SPI_Init(SPI2,&SPI_InitStructure);									//¸ù¾İSPI_InitStructÖĞÖ¸¶¨µÄ²ÎÊı³õÊ¼»¯ÍâÉèSPI1¼Ä´æÆ÷
-	SPI_Cmd(SPI2,ENABLE);	//STM32Ê¹ÄÜSPI2
+	SPI_InitTypeDef  SPI_InitStructure;
+	GPIO_InitTypeDef GPIO_InitStructure;
+	/* SPI GPIO configuration */
+	/* enable AHB1 of port B*/
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
+	/* pin selection */
+	GPIO_InitStructure.GPIO_Pin = W5500_SPI_CLK_Pin |W5500_SPI_MISO_Pin | W5500_SPI_MOSI_Pin;
+	/* push pull output, for better power perfomance */
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	/* inner pull down */
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;
+	/* AF mode*/	
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+	/* GPIO operation speed */
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
+	/* enable selected GPIO to SPI2 AF function */
+	GPIO_PinAFConfig(GPIOB,GPIO_PinSource13,GPIO_AF_SPI2);  
+	GPIO_PinAFConfig(GPIOB,GPIO_PinSource14,GPIO_AF_SPI2);
+	GPIO_PinAFConfig(GPIOB,GPIO_PinSource15,GPIO_AF_SPI2);
+	/* SPI function configuration */
+	/* enable SPI2's clk */
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2,ENABLE); 
+	/* SPI running mode */
+	SPI_InitStructure.SPI_Direction=SPI_Direction_2Lines_FullDuplex;
+	/* make this SPI, master mode */
+	SPI_InitStructure.SPI_Mode=SPI_Mode_Master;
+	SPI_InitStructure.SPI_DataSize=SPI_DataSize_8b;		
+	/* CLK low when do nothing */				
+	SPI_InitStructure.SPI_CPOL=SPI_CPOL_Low; 
+	/* extra data at the first CLK edge */
+	SPI_InitStructure.SPI_CPHA=SPI_CPHA_1Edge;						
+	SPI_InitStructure.SPI_NSS=SPI_NSS_Soft;							
+	/* baudarate */
+	SPI_InitStructure.SPI_BaudRatePrescaler=SPI_BaudRatePrescaler_2;
+	SPI_InitStructure.SPI_FirstBit=SPI_FirstBit_MSB;				
+	SPI_InitStructure.SPI_CRCPolynomial=7;							
+	SPI_Init(SPI2,&SPI_InitStructure);							
+	SPI_Cmd(SPI2,ENABLE);	
 }
 /*******************************************************************************
-* º¯ÊıÃû  : SPI1_Send_Byte
-* ÃèÊö    : SPI1·¢ËÍ1¸ö×Ö½ÚÊı¾İ
-* ÊäÈë    : dat:´ı·¢ËÍµÄÊı¾İ
-* Êä³ö    : ÎŞ
-* ·µ»ØÖµ  : ÎŞ
-* ËµÃ÷    : ÎŞ
+ * Funtion : SPI2_Send_Byte
+ * Description : SPI2 send one byte 
+ * Input : None
+ * Output : None
+ * Return : None
+ * Others : None
 *******************************************************************************/
 void SPI2_Send_Byte(unsigned char dat)
 {
-	SPI_I2S_SendData(SPI_SEL,dat);//Ğ´1¸ö×Ö½ÚÊı¾İ
-	while(SPI_I2S_GetFlagStatus(SPI_SEL, SPI_I2S_FLAG_TXE) == RESET);//µÈ´ıÊı¾İ¼Ä´æÆ÷¿Õ
+	SPI_I2S_SendData(SPI_SEL,dat);
+	while(SPI_I2S_GetFlagStatus(SPI_SEL, SPI_I2S_FLAG_TXE) == RESET);
 }
-
 /*******************************************************************************
-* º¯ÊıÃû  : Load_Net_Parameters
-* ÃèÊö    : ×°ÔØÍøÂç²ÎÊı
-* ÊäÈë    : ÎŞ
-* Êä³ö    : ÎŞ
-* ·µ»ØÖµ  : ÎŞ
-* ËµÃ÷    : Íø¹Ø¡¢ÑÚÂë¡¢ÎïÀíµØÖ·¡¢±¾»úIPµØÖ·¡¢¶Ë¿ÚºÅ¡¢Ä¿µÄIPµØÖ·¡¢Ä¿µÄ¶Ë¿ÚºÅ¡¢¶Ë¿Ú¹¤×÷Ä£Ê½
+ * Funtion : Load_Net_Parameters
+ * Description : net work parameter setting
+ * Input : None
+ * Output : None
+ * Return : None
+ * Others : None
 *******************************************************************************/
 void Load_Net_Parameters(void)
 {
-	Gateway_IP[0] = 192;//¼ÓÔØÍø¹Ø²ÎÊı
+	/* gateway IP address */
+	Gateway_IP[0] = 192;
 	Gateway_IP[1] = 168;
 	Gateway_IP[2] = 15;
 	Gateway_IP[3] = 1;
-
-	Sub_Mask[0]=255;//¼ÓÔØ×ÓÍøÑÚÂë
+	/* sub mask IP */
+	Sub_Mask[0]=255;
 	Sub_Mask[1]=255;
 	Sub_Mask[2]=255;
 	Sub_Mask[3]=0;
-
-	Phy_Addr[0]=0x0c;//¼ÓÔØÎïÀíµØÖ·
+	/* MAC address */
+	Phy_Addr[0]=0x0c;
 	Phy_Addr[1]=0x29;
 	Phy_Addr[2]=0xab;
 	Phy_Addr[3]=0x7c;
 	Phy_Addr[4]=0x00;
 	Phy_Addr[5]=0x01;
-
-	IP_Addr[0]=192;//¼ÓÔØ±¾»úIPµØÖ·
+	/* self IP address */
+	IP_Addr[0]=192;
 	IP_Addr[1]=168;
 	IP_Addr[2]=15;
 	IP_Addr[3]=3;
-
-	S0_Port[0] = 0x13;//¼ÓÔØ¶Ë¿Ú0µÄ¶Ë¿ÚºÅ5000 
+	/* port 0, port number. 0x1388 = 0d5000*/
+	S0_Port[0] = 0x13;
 	S0_Port[1] = 0x88;
-
-	S0_DIP[0]=192;//¼ÓÔØ¶Ë¿Ú0µÄÄ¿µÄIPµØÖ·
+	/* port 0, destination IP address */
+	S0_DIP[0]=192;
 	S0_DIP[1]=168;
 	S0_DIP[2]=15;
 	S0_DIP[3]=100;
-	
-	S0_DPort[0] = 0x17;//¼ÓÔØ¶Ë¿Ú0µÄÄ¿µÄ¶Ë¿ÚºÅ6000
+	/* port 0, destination port number. 0x1770 = 0d6000 */
+	S0_DPort[0] = 0x17;
 	S0_DPort[1] = 0x70;
-
-	S0_Mode=TCP_CLIENT;//¼ÓÔØ¶Ë¿Ú0µÄ¹¤×÷Ä£Ê½,TCP¿Í»§¶ËÄ£Ê½
+	/* port 0, operation mode. TCP client mode */
+	S0_Mode = TCP_CLIENT;
 }
 /*******************************************************************************
-* º¯ÊıÃû  : W5500_Initialization
-* ÃèÊö    : W5500³õÊ¼»õÅäÖÃ
-* ÊäÈë    : ÎŞ
-* Êä³ö    : ÎŞ
-* ·µ»ØÖµ  : ÎŞ
-* ËµÃ÷    : ÎŞ
+ * Funtion : W5500_Initialization
+ * Description : Init W5500
+ * Input : None
+ * Output : None
+ * Return : None
+ * Others : None
 *******************************************************************************/
 void W5500_Initialization(void)
 {
-	W5500_Init();		//³õÊ¼»¯W5500¼Ä´æÆ÷º¯Êı
-	Detect_Gateway();	//¼ì²éÍø¹Ø·şÎñÆ÷ 
-	Socket_Init(0);		//Ö¸¶¨Socket(0~7)³õÊ¼»¯,³õÊ¼»¯¶Ë¿Ú0
+	/* Init all register of W5500 */
+	W5500_Init();	
+	/* Check gateway connection */
+	Detect_Gateway();	
+	/* init the selected port, socket 0 */ 
+	Socket_Init(0);	
 }
-
 /*******************************************************************************
-* º¯ÊıÃû  : W5500_Init
-* ÃèÊö    : ³õÊ¼»¯W5500¼Ä´æÆ÷º¯Êı
-* ÊäÈë    : ÎŞ
-* Êä³ö    : ÎŞ
-* ·µ»ØÖµ  : ÎŞ
-* ËµÃ÷    : ÔÚÊ¹ÓÃW5500Ö®Ç°£¬ÏÈ¶ÔW5500³õÊ¼»¯
+ * Funtion : W5500_Init
+ * Description : Init W5500's register 
+ * Input : None
+ * Output : None
+ * Return : None
+ * Others : None
 *******************************************************************************/
 void W5500_Init(void)
 {
-	  OS_ERR  err;
+	OS_ERR  err;
 	u8 i=0;
-
-	Write_W5500_1Byte(MR, RST);//Èí¼ş¸´Î»W5500,ÖÃ1ÓĞĞ§,¸´Î»ºó×Ô¶¯Çå0
-	//Delay(10);//ÑÓÊ±10ms,×Ô¼º¶¨Òå¸Ãº¯Êı
+	/* soft-reset of W5500, set 1 enable, after the reset of W5500, register auto reset 0 */
+	Write_W5500_1Byte(MR, RST);
+	/* delay 10ms */
 	OSTimeDlyHMSM(0u, 0u, 0u, 10u,
-                  OS_OPT_TIME_HMSM_STRICT,
-                  &err);
-
-	//ÉèÖÃÍø¹Ø(Gateway)µÄIPµØÖ·,Gateway_IPÎª4×Ö½Úunsigned charÊı×é,×Ô¼º¶¨Òå 
-	//Ê¹ÓÃÍø¹Ø¿ÉÒÔÊ¹Í¨ĞÅÍ»ÆÆ×ÓÍøµÄ¾ÖÏŞ£¬Í¨¹ıÍø¹Ø¿ÉÒÔ·ÃÎÊµ½ÆäËü×ÓÍø»ò½øÈëInternet
-	Write_W5500_nByte(GAR, Gateway_IP, 4);
-			
-	//ÉèÖÃ×ÓÍøÑÚÂë(MASK)Öµ,SUB_MASKÎª4×Ö½Úunsigned charÊı×é,×Ô¼º¶¨Òå
-	//×ÓÍøÑÚÂëÓÃÓÚ×ÓÍøÔËËã
-	Write_W5500_nByte(SUBR,Sub_Mask,4);		
-	
-	//ÉèÖÃÎïÀíµØÖ·,PHY_ADDRÎª6×Ö½Úunsigned charÊı×é,×Ô¼º¶¨Òå,ÓÃÓÚÎ¨Ò»±êÊ¶ÍøÂçÉè±¸µÄÎïÀíµØÖ·Öµ
-	//¸ÃµØÖ·ÖµĞèÒªµ½IEEEÉêÇë£¬°´ÕÕOUIµÄ¹æ¶¨£¬Ç°3¸ö×Ö½ÚÎª³§ÉÌ´úÂë£¬ºóÈı¸ö×Ö½ÚÎª²úÆ·ĞòºÅ
-	//Èç¹û×Ô¼º¶¨ÒåÎïÀíµØÖ·£¬×¢ÒâµÚÒ»¸ö×Ö½Ú±ØĞëÎªÅ¼Êı
+                OS_OPT_TIME_HMSM_STRICT,
+                &err);
+	/* set gateway IP, for access other net, such as Internet */
+	Write_W5500_nByte(GAR, Gateway_IP, 4);			
+	/* set sub net mask */
+	Write_W5500_nByte(SUBR,Sub_Mask,4);			
+	/* set MAC address, follow IEEE standard, for self-defination, the first byte must be odd number */
 	Write_W5500_nByte(SHAR,Phy_Addr,6);		
-
-	//ÉèÖÃ±¾»úµÄIPµØÖ·,IP_ADDRÎª4×Ö½Úunsigned charÊı×é,×Ô¼º¶¨Òå
-	//×¢Òâ£¬Íø¹ØIP±ØĞëÓë±¾»úIPÊôÓÚÍ¬Ò»¸ö×ÓÍø£¬·ñÔò±¾»ú½«ÎŞ·¨ÕÒµ½Íø¹Ø
+	/* set self IP address, must make the IP belongs to the sub-net */
+	/* for example, the forehead three bytes of gateway and IP must agree */
 	Write_W5500_nByte(SIPR,IP_Addr,4);		
-	
-	//ÉèÖÃ·¢ËÍ»º³åÇøºÍ½ÓÊÕ»º³åÇøµÄ´óĞ¡£¬²Î¿¼W5500Êı¾İÊÖ²á
+	/* Set socket 0~7 TX buffer and RX buffer to 2K, follow user guide of W5500 */
 	for(i=0;i<8;i++)
 	{
-		Write_W5500_SOCK_1Byte(i,Sn_RXBUF_SIZE, 0x02);//Socket Rx memory size=2k
-		Write_W5500_SOCK_1Byte(i,Sn_TXBUF_SIZE, 0x02);//Socket Tx mempry size=2k
+		/* RX buffer size of socket 0~7 */
+		Write_W5500_SOCK_1Byte(i,Sn_RXBUF_SIZE, 0x02);
+		/* TX buffer size of socket 0~7 */
+		Write_W5500_SOCK_1Byte(i,Sn_TXBUF_SIZE, 0x02);
 	}
-
-	//ÉèÖÃÖØÊÔÊ±¼ä£¬Ä¬ÈÏÎª2000(200ms) 
-	//Ã¿Ò»µ¥Î»ÊıÖµÎª100Î¢Ãë,³õÊ¼»¯Ê±ÖµÉèÎª2000(0x07D0),µÈÓÚ200ºÁÃë
+	/* set reconnect timeout, bu default 200ms = 2000(0x07d0)*100us, 100us per ticket */
 	Write_W5500_2Byte(RTR, 0x07d0);
-
-	//ÉèÖÃÖØÊÔ´ÎÊı£¬Ä¬ÈÏÎª8´Î 
-	//Èç¹ûÖØ·¢µÄ´ÎÊı³¬¹ıÉè¶¨Öµ,Ôò²úÉú³¬Ê±ÖĞ¶Ï(Ïà¹ØµÄ¶Ë¿ÚÖĞ¶Ï¼Ä´æÆ÷ÖĞµÄSn_IR ³¬Ê±Î»(TIMEOUT)ÖÃ¡°1¡±)
+	/* set reconnect times, by default 8. if times out, register Sn_IR TIMEOUT bit auto SET 1 */
 	Write_W5500_1Byte(RCR,8);
-
-	//Æô¶¯ÖĞ¶Ï£¬²Î¿¼W5500Êı¾İÊÖ²áÈ·¶¨×Ô¼ºĞèÒªµÄÖĞ¶ÏÀàĞÍ
-	//IMR_CONFLICTÊÇIPµØÖ·³åÍ»Òì³£ÖĞ¶Ï,IMR_UNREACHÊÇUDPÍ¨ĞÅÊ±£¬µØÖ·ÎŞ·¨µ½´ïµÄÒì³£ÖĞ¶Ï
-	//ÆäËüÊÇSocketÊÂ¼şÖĞ¶Ï£¬¸ù¾İĞèÒªÌí¼Ó
+	/* enable interrupt, refer to user guide of W5500, set intterrupt style */
+	/* IMR_CONFLICT, IP conflict interrupt */
+	/* IMR_UNREACH, address cannot access when using UDP mode */
 	Write_W5500_1Byte(IMR,IM_IR7 | IM_IR6);
 	Write_W5500_1Byte(SIMR,S0_IMR);
 	Write_W5500_SOCK_1Byte(0, Sn_IMR, IMR_SENDOK | IMR_TIMEOUT | IMR_RECV | IMR_DISCON | IMR_CON);
 }
 /*******************************************************************************
-* º¯ÊıÃû  : Write_W5500_1Byte
-* ÃèÊö    : Í¨¹ıSPI1ÏòÖ¸¶¨µØÖ·¼Ä´æÆ÷Ğ´1¸ö×Ö½ÚÊı¾İ
-* ÊäÈë    : reg:16Î»¼Ä´æÆ÷µØÖ·,dat:´ıĞ´ÈëµÄÊı¾İ
-* Êä³ö    : ÎŞ
-* ·µ»ØÖµ  : ÎŞ
-* ËµÃ÷    : ÎŞ
+ * Funtion : Write_W5500_1Byte
+ * Description : write one byte to the selected registor of W5500
+ * Input : reg, 16bit registor; dat, data;
+ * Output : None
+ * Return : None
+ * Others : None
 *******************************************************************************/
 void Write_W5500_1Byte(unsigned short reg, unsigned char dat)
 {
-	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);//ÖÃW5500µÄSCSÎªµÍµçÆ½
-
-	SPI1_Send_Short(reg);//Í¨¹ıSPI1Ğ´16Î»¼Ä´æÆ÷µØÖ·
-	SPI1_Send_Byte(FDM1|RWB_WRITE|COMMON_R);//Í¨¹ıSPI1Ğ´¿ØÖÆ×Ö½Ú,1¸ö×Ö½ÚÊı¾İ³¤¶È,Ğ´Êı¾İ,Ñ¡ÔñÍ¨ÓÃ¼Ä´æÆ÷
-	SPI1_Send_Byte(dat);//Ğ´1¸ö×Ö½ÚÊı¾İ
-
-	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin); //ÖÃW5500µÄSCSÎª¸ßµçÆ½
+	/* reset pin SCS, enable W5500 */
+	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);
+	/* use SPI send to the registor */
+	SPI2_Send_Short(reg);
+	/* write control word, 1 byte length */
+	SPI2_Send_Byte(FDM1|RWB_WRITE|COMMON_R);
+	/* write data */
+	SPI2_Send_Byte(dat);
+	/* set pin SCS, disable W5500 */
+	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin);
 }
 /*******************************************************************************
-* º¯ÊıÃû  : Write_W5500_nByte
-* ÃèÊö    : Í¨¹ıSPI1ÏòÖ¸¶¨µØÖ·¼Ä´æÆ÷Ğ´n¸ö×Ö½ÚÊı¾İ
-* ÊäÈë    : reg:16Î»¼Ä´æÆ÷µØÖ·,*dat_ptr:´ıĞ´ÈëÊı¾İ»º³åÇøÖ¸Õë,size:´ıĞ´ÈëµÄÊı¾İ³¤¶È
-* Êä³ö    : ÎŞ
-* ·µ»ØÖµ  : ÎŞ
-* ËµÃ÷    : ÎŞ
+ * Funtion : Write_W5500_nByte
+ * Description : write multi-byte to the selected registor of W5500
+ * Input : reg, 16bit registor; *dat_ptr, data buffer ptr; size, data size;
+ * Output : None
+ * Return : None
+ * Others : None
 *******************************************************************************/
 void Write_W5500_nByte(unsigned short reg, unsigned char *dat_ptr, unsigned short size)
 {
 	unsigned short i;
-
-	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);//ÖÃW5500µÄSCSÎªµÍµçÆ½	
-		
-	SPI1_Send_Short(reg);//Í¨¹ıSPI1Ğ´16Î»¼Ä´æÆ÷µØÖ·
-	SPI1_Send_Byte(VDM|RWB_WRITE|COMMON_R);//Í¨¹ıSPI1Ğ´¿ØÖÆ×Ö½Ú,N¸ö×Ö½ÚÊı¾İ³¤¶È,Ğ´Êı¾İ,Ñ¡ÔñÍ¨ÓÃ¼Ä´æÆ÷
-
-	for(i=0;i<size;i++)//Ñ­»·½«»º³åÇøµÄsize¸ö×Ö½ÚÊı¾İĞ´ÈëW5500
+	/* reset pin SCS, enable W5500 */
+	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);
+	/* use SPI send to the registor */	
+	SPI2_Send_Short(reg);
+	/* write control word, n byte length */
+	SPI2_Send_Byte(VDM|RWB_WRITE|COMMON_R);
+	/* write all data to W5500 */
+	for(i=0;i<size;i++)
 	{
-		SPI1_Send_Byte(*dat_ptr++);//Ğ´Ò»¸ö×Ö½ÚÊı¾İ
+		SPI2_Send_Byte(*dat_ptr++);
 	}
-
-	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin); //ÖÃW5500µÄSCSÎª¸ßµçÆ½
+	/* set pin SCS, disable W5500 */
+	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin);
 }
 /*******************************************************************************
-* º¯ÊıÃû  : SPI1_Send_Short
-* ÃèÊö    : SPI1·¢ËÍ2¸ö×Ö½ÚÊı¾İ(16Î»)
-* ÊäÈë    : dat:´ı·¢ËÍµÄ16Î»Êı¾İ
-* Êä³ö    : ÎŞ
-* ·µ»ØÖµ  : ÎŞ
-* ËµÃ÷    : ÎŞ
+ * Funtion : SPI2_Send_Short
+ * Description : write 2-byte to the selected registor of W5500
+ * Input : dat, data;
+ * Output : None
+ * Return : None
+ * Others : None
 *******************************************************************************/
-void SPI1_Send_Short(unsigned short dat)
+void SPI2_Send_Short(unsigned short dat)
 {
-	SPI1_Send_Byte(dat/256);//Ğ´Êı¾İ¸ßÎ»
-	SPI1_Send_Byte(dat);	//Ğ´Êı¾İµÍÎ»
+	/* MSB */
+	SPI2_Send_Byte(dat/256);
+	/* LSB */
+	SPI2_Send_Byte(dat);
 }
 /*******************************************************************************
-* º¯ÊıÃû  : Write_W5500_SOCK_1Byte
-* ÃèÊö    : Í¨¹ıSPI1ÏòÖ¸¶¨¶Ë¿Ú¼Ä´æÆ÷Ğ´1¸ö×Ö½ÚÊı¾İ
-* ÊäÈë    : s:¶Ë¿ÚºÅ,reg:16Î»¼Ä´æÆ÷µØÖ·,dat:´ıĞ´ÈëµÄÊı¾İ
-* Êä³ö    : ÎŞ
-* ·µ»ØÖµ  : ÎŞ
-* ËµÃ÷    : ÎŞ
+ * Funtion : Write_W5500_SOCK_1Byte
+ * Description : write 1-byte to the selected socket of W5500
+ * Input : s, socket port; reg, 16 bit registor address; dat, data;
+ * Output : None
+ * Return : None
+ * Others : None
 *******************************************************************************/
 void Write_W5500_SOCK_1Byte(SOCKET s, unsigned short reg, unsigned char dat)
 {
-	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);//ÖÃW5500µÄSCSÎªµÍµçÆ½	
-		
-	SPI1_Send_Short(reg);//Í¨¹ıSPI1Ğ´16Î»¼Ä´æÆ÷µØÖ·
-	SPI1_Send_Byte(FDM1|RWB_WRITE|(s*0x20+0x08));//Í¨¹ıSPI1Ğ´¿ØÖÆ×Ö½Ú,1¸ö×Ö½ÚÊı¾İ³¤¶È,Ğ´Êı¾İ,Ñ¡Ôñ¶Ë¿ÚsµÄ¼Ä´æÆ÷
-	SPI1_Send_Byte(dat);//Ğ´1¸ö×Ö½ÚÊı¾İ
-
-	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin); //ÖÃW5500µÄSCSÎª¸ßµçÆ½
+	/* reset pin SCS, enable W5500 */
+	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);
+	/* 16 bit registro addr. */		
+	SPI2_Send_Short(reg);
+	/* control byte */
+	SPI2_Send_Byte(FDM1|RWB_WRITE|(s*0x20+0x08));
+	/* send data */
+	SPI2_Send_Byte(dat);
+	/* set pin SCS, disable W5500 */
+	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin); 
 }
 /*******************************************************************************
-* º¯ÊıÃû  : Write_W5500_2Byte
-* ÃèÊö    : Í¨¹ıSPI1ÏòÖ¸¶¨µØÖ·¼Ä´æÆ÷Ğ´2¸ö×Ö½ÚÊı¾İ
-* ÊäÈë    : reg:16Î»¼Ä´æÆ÷µØÖ·,dat:16Î»´ıĞ´ÈëµÄÊı¾İ(2¸ö×Ö½Ú)
-* Êä³ö    : ÎŞ
-* ·µ»ØÖµ  : ÎŞ
-* ËµÃ÷    : ÎŞ
+ * Funtion : Write_W5500_2Byte
+ * Description : write 2-byte to the selected registor of W5500
+ * Input : reg, 16 bit registor address; dat, data;
+ * Output : None
+ * Return : None
+ * Others : None
 *******************************************************************************/
 void Write_W5500_2Byte(unsigned short reg, unsigned short dat)
 {
-	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);//ÖÃW5500µÄSCSÎªµÍµçÆ½
-		
-	SPI1_Send_Short(reg);//Í¨¹ıSPI1Ğ´16Î»¼Ä´æÆ÷µØÖ·
-	SPI1_Send_Byte(FDM2|RWB_WRITE|COMMON_R);//Í¨¹ıSPI1Ğ´¿ØÖÆ×Ö½Ú,2¸ö×Ö½ÚÊı¾İ³¤¶È,Ğ´Êı¾İ,Ñ¡ÔñÍ¨ÓÃ¼Ä´æÆ÷
-	SPI1_Send_Short(dat);//Ğ´16Î»Êı¾İ
-
-	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin); //ÖÃW5500µÄSCSÎª¸ßµçÆ½
+	/* reset pin SCS, enable W5500 */
+	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);
+	/* 16 bit registro addr. */	
+	SPI2_Send_Short(reg);
+	/* control byte */
+	SPI2_Send_Byte(FDM2|RWB_WRITE|COMMON_R);
+	/* send data */
+	SPI2_Send_Short(dat);
+	/* set pin SCS, disable W5500 */
+	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin);
 }
 /*******************************************************************************
-* º¯ÊıÃû  : SPI1_Send_Byte
-* ÃèÊö    : SPI1·¢ËÍ1¸ö×Ö½ÚÊı¾İ
-* ÊäÈë    : dat:´ı·¢ËÍµÄÊı¾İ
-* Êä³ö    : ÎŞ
-* ·µ»ØÖµ  : ÎŞ
-* ËµÃ÷    : ÎŞ
+ * Funtion : Write_W5500_2Byte
+ * Description : write 2-byte to the selected registor of W5500
+ * Input : reg, 16 bit registor address; dat, data;
+ * Output : None
+ * Return : None
+ * Others : None
 *******************************************************************************/
-void SPI1_Send_Byte(unsigned char dat)
+# if 0
+void SPI2_Send_Byte(unsigned char dat)
 {
-	SPI_I2S_SendData(SPI_SEL,dat);//Ğ´1¸ö×Ö½ÚÊı¾İ
-	while(SPI_I2S_GetFlagStatus(SPI_SEL, SPI_I2S_FLAG_TXE) == RESET);//µÈ´ıÊı¾İ¼Ä´æÆ÷¿Õ
+	SPI_I2S_SendData(SPI_SEL,dat);//Ğ´1ï¿½ï¿½ï¿½Ö½ï¿½ï¿½ï¿½ï¿½ï¿½
+	while(SPI_I2S_GetFlagStatus(SPI_SEL, SPI_I2S_FLAG_TXE) == RESET);//ï¿½È´ï¿½ï¿½ï¿½ï¿½İ¼Ä´ï¿½ï¿½ï¿½ï¿½ï¿½
 }
-
+#endif
 /*******************************************************************************
-* º¯ÊıÃû  : Detect_Gateway
-* ÃèÊö    : ¼ì²éÍø¹Ø·şÎñÆ÷
-* ÊäÈë    : ÎŞ
-* Êä³ö    : ÎŞ
-* ·µ»ØÖµ  : ³É¹¦·µ»ØTRUE(0xFF),Ê§°Ü·µ»ØFALSE(0x00)
-* ËµÃ÷    : ÎŞ
+ * Funtion : Detect_Gateway
+ * Description : check gateway connection status
+ * Input : None
+ * Output : None
+ * Return : None
+ * Others : None
 *******************************************************************************/
 unsigned char Detect_Gateway(void)
 {
@@ -403,228 +453,228 @@ unsigned char Detect_Gateway(void)
 	ip_adde[1]=IP_Addr[1]+1;
 	ip_adde[2]=IP_Addr[2]+1;
 	ip_adde[3]=IP_Addr[3]+1;
-
-	//¼ì²éÍø¹Ø¼°»ñÈ¡Íø¹ØµÄÎïÀíµØÖ·
-	Write_W5500_SOCK_4Byte(0,Sn_DIPR,ip_adde);//ÏòÄ¿µÄµØÖ·¼Ä´æÆ÷Ğ´ÈëÓë±¾»úIP²»Í¬µÄIPÖµ
-	Write_W5500_SOCK_1Byte(0,Sn_MR,MR_TCP);//ÉèÖÃsocketÎªTCPÄ£Ê½
-	Write_W5500_SOCK_1Byte(0,Sn_CR,OPEN);//´ò¿ªSocket	
-	//Delay(5);//ÑÓÊ±5ms 	
+	/* check gateway and gateway's MAC */
+	/* write an IP differ from self IP to the destination IP by socket 0 */
+	Write_W5500_SOCK_4Byte(0,Sn_DIPR,ip_adde);
+	/* set socket working in TCP mode */
+	Write_W5500_SOCK_1Byte(0,Sn_MR,MR_TCP);
+	/* open socket 0 */
+	Write_W5500_SOCK_1Byte(0,Sn_CR,OPEN);
+	/* delay 5ms */	
   OSTimeDlyHMSM(0u, 0u, 0u, 5u,
-                  OS_OPT_TIME_HMSM_STRICT,
-                  &err);
-	if(Read_W5500_SOCK_1Byte(0,Sn_SR) != SOCK_INIT)//Èç¹ûsocket´ò¿ªÊ§°Ü
+                OS_OPT_TIME_HMSM_STRICT,
+                &err);
+	if(Read_W5500_SOCK_1Byte(0,Sn_SR) != SOCK_INIT)//ï¿½ï¿½ï¿½socketï¿½ï¿½Ê§ï¿½ï¿½
 	{
-		Write_W5500_SOCK_1Byte(0,Sn_CR,CLOSE);//´ò¿ª²»³É¹¦,¹Ø±ÕSocket
-		return FALSE;//·µ»ØFALSE(0x00)
+		/* open socket failed, close socket */
+		Write_W5500_SOCK_1Byte(0,Sn_CR,CLOSE);
+		return FALSE;
 	}
-
-	Write_W5500_SOCK_1Byte(0,Sn_CR,CONNECT);//ÉèÖÃSocketÎªConnectÄ£Ê½						
-
+	/* set socket 0 to connect state */
+	Write_W5500_SOCK_1Byte(0,Sn_CR,CONNECT);				
 	do
 	{
 		u8 j=0;
-		j=Read_W5500_SOCK_1Byte(0,Sn_IR);//¶ÁÈ¡Socket0ÖĞ¶Ï±êÖ¾¼Ä´æÆ÷
+		/* read W5500 Interruption registor state */
+		j=Read_W5500_SOCK_1Byte(0,Sn_IR);
 		if(j!=0)
-		Write_W5500_SOCK_1Byte(0,Sn_IR,j);
-		
-		// Delay(5);//ÑÓÊ±5ms 
+		{
+			Write_W5500_SOCK_1Byte(0,Sn_IR,j);
+		}		
+		/* delay 5ms */
 	  OSTimeDlyHMSM(0u, 0u, 0u, 5u,
                   OS_OPT_TIME_HMSM_STRICT,
                   &err);
 		if((j&IR_TIMEOUT) == IR_TIMEOUT)
 		{
+			/* connect timeout */
 			return FALSE;	
 		}
 		else if(Read_W5500_SOCK_1Byte(0,Sn_DHAR) != 0xff)
 		{
-			Write_W5500_SOCK_1Byte(0,Sn_CR,CLOSE);//¹Ø±ÕSocket
+			/* close socket 0 */
+			Write_W5500_SOCK_1Byte(0,Sn_CR,CLOSE);
 			return TRUE;							
 		}
 	}while(1);
 }
 /*******************************************************************************
-* º¯ÊıÃû  : Write_W5500_SOCK_4Byte
-* ÃèÊö    : Í¨¹ıSPI1ÏòÖ¸¶¨¶Ë¿Ú¼Ä´æÆ÷Ğ´4¸ö×Ö½ÚÊı¾İ
-* ÊäÈë    : s:¶Ë¿ÚºÅ,reg:16Î»¼Ä´æÆ÷µØÖ·,*dat_ptr:´ıĞ´ÈëµÄ4¸ö×Ö½Ú»º³åÇøÖ¸Õë
-* Êä³ö    : ÎŞ
-* ·µ»ØÖµ  : ÎŞ
-* ËµÃ÷    : ÎŞ
+ * Funtion : Write_W5500_SOCK_4Byte
+ * Description : write 4 byte to the selected registor by selected socket
+ * Input : s, socket port; reg, 16 bit registor; *dat_ptr, 4 byte data buffer ptr;
+ * Output : None
+ * Return : None
+ * Others : None
 *******************************************************************************/
 void Write_W5500_SOCK_4Byte(SOCKET s, unsigned short reg, unsigned char *dat_ptr)
 {
-	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);//ÖÃW5500µÄSCSÎªµÍµçÆ½
-			
-	SPI1_Send_Short(reg);//Í¨¹ıSPI1Ğ´16Î»¼Ä´æÆ÷µØÖ·
-	SPI1_Send_Byte(FDM4|RWB_WRITE|(s*0x20+0x08));//Í¨¹ıSPI1Ğ´¿ØÖÆ×Ö½Ú,4¸ö×Ö½ÚÊı¾İ³¤¶È,Ğ´Êı¾İ,Ñ¡Ôñ¶Ë¿ÚsµÄ¼Ä´æÆ÷
-
-	SPI1_Send_Byte(*dat_ptr++);//Ğ´µÚ1¸ö×Ö½ÚÊı¾İ
-	SPI1_Send_Byte(*dat_ptr++);//Ğ´µÚ2¸ö×Ö½ÚÊı¾İ
-	SPI1_Send_Byte(*dat_ptr++);//Ğ´µÚ3¸ö×Ö½ÚÊı¾İ
-	SPI1_Send_Byte(*dat_ptr++);//Ğ´µÚ4¸ö×Ö½ÚÊı¾İ
-
-	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin); //ÖÃW5500µÄSCSÎª¸ßµçÆ½
+	/* enable W5500 */
+	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);
+	/* select registor */			
+	SPI2_Send_Short(reg);
+	/* ctrl byte */
+	SPI2_Send_Byte(FDM4|RWB_WRITE|(s*0x20+0x08));
+	/* write 4 byte data */
+	SPI2_Send_Byte(*dat_ptr++);
+	SPI2_Send_Byte(*dat_ptr++);
+	SPI2_Send_Byte(*dat_ptr++);
+	SPI2_Send_Byte(*dat_ptr++);
+	/* disable W5500 */
+	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin);
 }
 /*******************************************************************************
-* º¯ÊıÃû  : Read_W5500_SOCK_1Byte
-* ÃèÊö    : ¶ÁW5500Ö¸¶¨¶Ë¿Ú¼Ä´æÆ÷µÄ1¸ö×Ö½ÚÊı¾İ
-* ÊäÈë    : s:¶Ë¿ÚºÅ,reg:16Î»¼Ä´æÆ÷µØÖ·
-* Êä³ö    : ÎŞ
-* ·µ»ØÖµ  : ¶ÁÈ¡µ½¼Ä´æÆ÷µÄ1¸ö×Ö½ÚÊı¾İ
-* ËµÃ÷    : ÎŞ
+ * Funtion : Read_W5500_SOCK_1Byte
+ * Description : write 1 byte to the selected registor by selected socket
+ * Input : s, socket port; reg, 16 bit registor;
+ * Output : None
+ * Return : None
+ * Others : None
 *******************************************************************************/
 unsigned char Read_W5500_SOCK_1Byte(SOCKET s, unsigned short reg)
 {
-	unsigned char i;
-
-	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);//ÖÃW5500µÄSCSÎªµÍµçÆ½
-			
-	SPI1_Send_Short(reg);//Í¨¹ıSPI1Ğ´16Î»¼Ä´æÆ÷µØÖ·
-	SPI1_Send_Byte(FDM1|RWB_READ|(s*0x20+0x08));//Í¨¹ıSPI1Ğ´¿ØÖÆ×Ö½Ú,1¸ö×Ö½ÚÊı¾İ³¤¶È,¶ÁÊı¾İ,Ñ¡Ôñ¶Ë¿ÚsµÄ¼Ä´æÆ÷
-
-	i=SPI_I2S_ReceiveData(SPI_SEL);
-	SPI1_Send_Byte(0x00);//·¢ËÍÒ»¸öÑÆÊı¾İ
-	i=SPI_I2S_ReceiveData(SPI_SEL);//¶ÁÈ¡1¸ö×Ö½ÚÊı¾İ
-
-	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin);//ÖÃW5500µÄSCSÎª¸ßµçÆ½
-	return i;//·µ»Ø¶ÁÈ¡µ½µÄ¼Ä´æÆ÷Êı¾İ
+	unsigned char rev_data;
+	/* enable W5500 */
+	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);
+	/* select registor */	
+	SPI2_Send_Short(reg);
+	/* ctrl byte */
+	SPI2_Send_Byte(FDM1|RWB_READ|(s*0x20+0x08));
+	rev_data = SPI_I2S_ReceiveData(SPI_SEL);
+	/* write one test data */
+	SPI2_Send_Byte(0x00);
+	rev_data = SPI_I2S_ReceiveData(SPI_SEL);
+	/* disable W55000 */
+	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin);
+	return (rev_data);
 }
-
 /*******************************************************************************
-* º¯ÊıÃû  : Socket_Init
-* ÃèÊö    : Ö¸¶¨Socket(0~7)³õÊ¼»¯
-* ÊäÈë    : s:´ı³õÊ¼»¯µÄ¶Ë¿Ú
-* Êä³ö    : ÎŞ
-* ·µ»ØÖµ  : ÎŞ
-* ËµÃ÷    : ÎŞ
+ * Funtion : Socket_Init
+ * Description : Init the selected socket port
+ * Input : s, socket port; 
+ * Output : None
+ * Return : None
+ * Others : None
 *******************************************************************************/
 void Socket_Init(SOCKET s)
 {
-	//ÉèÖÃ·ÖÆ¬³¤¶È£¬²Î¿¼W5500Êı¾İÊÖ²á£¬¸ÃÖµ¿ÉÒÔ²»ĞŞ¸Ä	
-	Write_W5500_SOCK_2Byte(0, Sn_MSSR, 1460);//×î´ó·ÖÆ¬×Ö½ÚÊı=1460(0x5b4)
-	//ÉèÖÃÖ¸¶¨¶Ë¿Ú
+	/* set piece length, refer to user guide of W5500 */
+	Write_W5500_SOCK_2Byte(0, Sn_MSSR, 1460);
 	switch(s)
 	{
 		case 0:
-			//ÉèÖÃ¶Ë¿Ú0µÄ¶Ë¿ÚºÅ
+			/* setting of socket 0 */
+			/* set socket 0's port number (self IP) */
 			Write_W5500_SOCK_2Byte(0, Sn_PORT, S0_Port[0]*256+S0_Port[1]);
-			//ÉèÖÃ¶Ë¿Ú0Ä¿µÄ(Ô¶³Ì)¶Ë¿ÚºÅ
+			/* set socket 0's port number (destination IP) */
 			Write_W5500_SOCK_2Byte(0, Sn_DPORTR, S0_DPort[0]*256+S0_DPort[1]);
-			//ÉèÖÃ¶Ë¿Ú0Ä¿µÄ(Ô¶³Ì)IPµØÖ·
-			Write_W5500_SOCK_4Byte(0, Sn_DIPR, S0_DIP);			
-			
+			/* set socket 0's destination IP */
+			Write_W5500_SOCK_4Byte(0, Sn_DIPR, S0_DIP);	
 			break;
-
 		case 1:
+			/* setting of socket 1 */
 			break;
-
 		case 2:
 			break;
-
 		case 3:
 			break;
-
 		case 4:
 			break;
-
 		case 5:
 			break;
-
 		case 6:
 			break;
-
 		case 7:
 			break;
-
 		default:
 			break;
 	}
 }
 /*******************************************************************************
-* º¯ÊıÃû  : Write_W5500_SOCK_2Byte
-* ÃèÊö    : Í¨¹ıSPI1ÏòÖ¸¶¨¶Ë¿Ú¼Ä´æÆ÷Ğ´2¸ö×Ö½ÚÊı¾İ
-* ÊäÈë    : s:¶Ë¿ÚºÅ,reg:16Î»¼Ä´æÆ÷µØÖ·,dat:16Î»´ıĞ´ÈëµÄÊı¾İ(2¸ö×Ö½Ú)
-* Êä³ö    : ÎŞ
-* ·µ»ØÖµ  : ÎŞ
-* ËµÃ÷    : ÎŞ
+* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½  : Write_W5500_SOCK_2Byte
+* ï¿½ï¿½ï¿½ï¿½    : Í¨ï¿½ï¿½SPI1ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½Ë¿Ú¼Ä´ï¿½ï¿½ï¿½Ğ´2ï¿½ï¿½ï¿½Ö½ï¿½ï¿½ï¿½ï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½    : s:ï¿½Ë¿Úºï¿½,reg:16Î»ï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½Ö·,dat:16Î»ï¿½ï¿½Ğ´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½(2ï¿½ï¿½ï¿½Ö½ï¿½)
+* ï¿½ï¿½ï¿½    : ï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½Öµ  : ï¿½ï¿½
+* Ëµï¿½ï¿½    : ï¿½ï¿½
 *******************************************************************************/
 void Write_W5500_SOCK_2Byte(SOCKET s, unsigned short reg, unsigned short dat)
 {
-	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);//ÖÃW5500µÄSCSÎªµÍµçÆ½
+	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);//ï¿½ï¿½W5500ï¿½ï¿½SCSÎªï¿½Íµï¿½Æ½
 			
-	SPI1_Send_Short(reg);//Í¨¹ıSPI1Ğ´16Î»¼Ä´æÆ÷µØÖ·
-	SPI1_Send_Byte(FDM2|RWB_WRITE|(s*0x20+0x08));//Í¨¹ıSPI1Ğ´¿ØÖÆ×Ö½Ú,2¸ö×Ö½ÚÊı¾İ³¤¶È,Ğ´Êı¾İ,Ñ¡Ôñ¶Ë¿ÚsµÄ¼Ä´æÆ÷
-	SPI1_Send_Short(dat);//Ğ´16Î»Êı¾İ
+	SPI2_Send_Short(reg);//Í¨ï¿½ï¿½SPI1Ğ´16Î»ï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½Ö·
+	SPI2_Send_Byte(FDM2|RWB_WRITE|(s*0x20+0x08));//Í¨ï¿½ï¿½SPI1Ğ´ï¿½ï¿½ï¿½ï¿½ï¿½Ö½ï¿½,2ï¿½ï¿½ï¿½Ö½ï¿½ï¿½ï¿½ï¿½İ³ï¿½ï¿½ï¿½,Ğ´ï¿½ï¿½ï¿½ï¿½,Ñ¡ï¿½ï¿½Ë¿ï¿½sï¿½Ä¼Ä´ï¿½ï¿½ï¿½
+	SPI2_Send_Short(dat);//Ğ´16Î»ï¿½ï¿½ï¿½ï¿½
 
-	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin); //ÖÃW5500µÄSCSÎª¸ßµçÆ½
+	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin); //ï¿½ï¿½W5500ï¿½ï¿½SCSÎªï¿½ßµï¿½Æ½
 }
 /*******************************************************************************
-* º¯ÊıÃû  : W5500_Hardware_Reset
-* ÃèÊö    : Ó²¼ş¸´Î»W5500
-* ÊäÈë    : ÎŞ
-* Êä³ö    : ÎŞ
-* ·µ»ØÖµ  : ÎŞ
-* ËµÃ÷    : W5500µÄ¸´Î»Òı½Å±£³ÖµÍµçÆ½ÖÁÉÙ500usÒÔÉÏ,²ÅÄÜÖØÎ§W5500
+* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½  : W5500_Hardware_Reset
+* ï¿½ï¿½ï¿½ï¿½    : Ó²ï¿½ï¿½ï¿½ï¿½Î»W5500
+* ï¿½ï¿½ï¿½ï¿½    : ï¿½ï¿½
+* ï¿½ï¿½ï¿½    : ï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½Öµ  : ï¿½ï¿½
+* Ëµï¿½ï¿½    : W5500ï¿½Ä¸ï¿½Î»ï¿½ï¿½ï¿½Å±ï¿½ï¿½ÖµÍµï¿½Æ½ï¿½ï¿½ï¿½ï¿½500usï¿½ï¿½ï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î§W5500
 *******************************************************************************/
 void W5500_Hardware_Reset(void)
 {
 	OS_ERR  err;
-	GPIO_ResetBits(W5500_RST_PORT, W5500_RST_Pin);//¸´Î»Òı½ÅÀ­µÍ
+	GPIO_ResetBits(W5500_RST_PORT, W5500_RST_Pin);//ï¿½ï¿½Î»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	//Delay(50);
 	OSTimeDlyHMSM(0u, 0u, 0u, 50u,
 					OS_OPT_TIME_HMSM_STRICT,
 					&err);
-	GPIO_SetBits(W5500_RST_PORT, W5500_RST_Pin);//¸´Î»Òı½ÅÀ­¸ß
+	GPIO_SetBits(W5500_RST_PORT, W5500_RST_Pin);//ï¿½ï¿½Î»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	//Delay(200);
 	OSTimeDlyHMSM(0u, 0u, 0u, 200u,
 					OS_OPT_TIME_HMSM_STRICT,
 					&err);
-	while((Read_W5500_1Byte(PHYCFGR)&LINK)==0);//µÈ´ıÒÔÌ«ÍøÁ¬½ÓÍê³É
+	while((Read_W5500_1Byte(PHYCFGR)&LINK)==0);//ï¿½È´ï¿½ï¿½ï¿½Ì«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 }
 /*******************************************************************************
-* º¯ÊıÃû  : Read_W5500_1Byte
-* ÃèÊö    : ¶ÁW5500Ö¸¶¨µØÖ·¼Ä´æÆ÷µÄ1¸ö×Ö½ÚÊı¾İ
-* ÊäÈë    : reg:16Î»¼Ä´æÆ÷µØÖ·
-* Êä³ö    : ÎŞ
-* ·µ»ØÖµ  : ¶ÁÈ¡µ½¼Ä´æÆ÷µÄ1¸ö×Ö½ÚÊı¾İ
-* ËµÃ÷    : ÎŞ
+* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½  : Read_W5500_1Byte
+* ï¿½ï¿½ï¿½ï¿½    : ï¿½ï¿½W5500Ö¸ï¿½ï¿½ï¿½ï¿½Ö·ï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½1ï¿½ï¿½ï¿½Ö½ï¿½ï¿½ï¿½ï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½    : reg:16Î»ï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½Ö·
+* ï¿½ï¿½ï¿½    : ï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½Öµ  : ï¿½ï¿½È¡ï¿½ï¿½ï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½1ï¿½ï¿½ï¿½Ö½ï¿½ï¿½ï¿½ï¿½ï¿½
+* Ëµï¿½ï¿½    : ï¿½ï¿½
 *******************************************************************************/
 unsigned char Read_W5500_1Byte(unsigned short reg)
 {
 	static unsigned char i;
 
-	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);//ÖÃW5500µÄSCSÎªµÍµçÆ½
+	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);//ï¿½ï¿½W5500ï¿½ï¿½SCSÎªï¿½Íµï¿½Æ½
 			
-	SPI1_Send_Short(reg);//Í¨¹ıSPI1Ğ´16Î»¼Ä´æÆ÷µØÖ·
-	SPI1_Send_Byte(FDM1|RWB_READ|COMMON_R);//Í¨¹ıSPI1Ğ´¿ØÖÆ×Ö½Ú,1¸ö×Ö½ÚÊı¾İ³¤¶È,¶ÁÊı¾İ,Ñ¡ÔñÍ¨ÓÃ¼Ä´æÆ÷
+	SPI2_Send_Short(reg);//Í¨ï¿½ï¿½SPI1Ğ´16Î»ï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½Ö·
+	SPI2_Send_Byte(FDM1|RWB_READ|COMMON_R);//Í¨ï¿½ï¿½SPI1Ğ´ï¿½ï¿½ï¿½ï¿½ï¿½Ö½ï¿½,1ï¿½ï¿½ï¿½Ö½ï¿½ï¿½ï¿½ï¿½İ³ï¿½ï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½,Ñ¡ï¿½ï¿½Í¨ï¿½Ã¼Ä´ï¿½ï¿½ï¿½
 
 	i=SPI_I2S_ReceiveData(SPI_SEL);
-	SPI1_Send_Byte(0x00);//·¢ËÍÒ»¸öÑÆÊı¾İ
-	i=SPI_I2S_ReceiveData(SPI_SEL);//¶ÁÈ¡1¸ö×Ö½ÚÊı¾İ
+	SPI2_Send_Byte(0x00);//ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	i=SPI_I2S_ReceiveData(SPI_SEL);//ï¿½ï¿½È¡1ï¿½ï¿½ï¿½Ö½ï¿½ï¿½ï¿½ï¿½ï¿½
 
-	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin);//ÖÃW5500µÄSCSÎª¸ßµçÆ½
-	return i;//·µ»Ø¶ÁÈ¡µ½µÄ¼Ä´æÆ÷Êı¾İ
+	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin);//ï¿½ï¿½W5500ï¿½ï¿½SCSÎªï¿½ßµï¿½Æ½
+	return i;//ï¿½ï¿½ï¿½Ø¶ï¿½È¡ï¿½ï¿½ï¿½Ä¼Ä´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 }
 /*******************************************************************************
-* º¯ÊıÃû  : W5500_Socket_Set
-* ÃèÊö    : W5500¶Ë¿Ú³õÊ¼»¯ÅäÖÃ
-* ÊäÈë    : ÎŞ
-* Êä³ö    : ÎŞ
-* ·µ»ØÖµ  : ÎŞ
-* ËµÃ÷    : ·Ö±ğÉèÖÃ4¸ö¶Ë¿Ú,¸ù¾İ¶Ë¿Ú¹¤×÷Ä£Ê½,½«¶Ë¿ÚÖÃÓÚTCP·şÎñÆ÷¡¢TCP¿Í»§¶Ë»òUDPÄ£Ê½.
-*			´Ó¶Ë¿Ú×´Ì¬×Ö½ÚSocket_State¿ÉÒÔÅĞ¶Ï¶Ë¿ÚµÄ¹¤×÷Çé¿ö
+* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½  : W5500_Socket_Set
+* ï¿½ï¿½ï¿½ï¿½    : W5500ï¿½Ë¿Ú³ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½    : ï¿½ï¿½
+* ï¿½ï¿½ï¿½    : ï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½Öµ  : ï¿½ï¿½
+* Ëµï¿½ï¿½    : ï¿½Ö±ï¿½ï¿½ï¿½ï¿½ï¿½4ï¿½ï¿½ï¿½Ë¿ï¿½,ï¿½ï¿½ï¿½İ¶Ë¿Ú¹ï¿½ï¿½ï¿½Ä£Ê½,ï¿½ï¿½ï¿½Ë¿ï¿½ï¿½ï¿½ï¿½ï¿½TCPï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½TCPï¿½Í»ï¿½ï¿½Ë»ï¿½UDPÄ£Ê½.
+*			ï¿½Ó¶Ë¿ï¿½×´Ì¬ï¿½Ö½ï¿½Socket_Stateï¿½ï¿½ï¿½ï¿½ï¿½Ğ¶Ï¶Ë¿ÚµÄ¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 *******************************************************************************/
 void W5500_Socket_Set(void)
 {
-	if(S0_State==0)//¶Ë¿Ú0³õÊ¼»¯ÅäÖÃ
+	if(S0_State==0)//ï¿½Ë¿ï¿½0ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	{
-		if(S0_Mode==TCP_SERVER)//TCP·şÎñÆ÷Ä£Ê½ 
+		if(S0_Mode==TCP_SERVER)//TCPï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä£Ê½ 
 		{
 			if(Socket_Listen(0)==TRUE)
 				S0_State=S_INIT;
 			else
 				S0_State=0;
 		}
-		else if(S0_Mode==TCP_CLIENT)//TCP¿Í»§¶ËÄ£Ê½ 
+		else if(S0_Mode==TCP_CLIENT)//TCPï¿½Í»ï¿½ï¿½ï¿½Ä£Ê½ 
 		{
 			if(Socket_Connect(0)==TRUE)
 				S0_State=S_INIT;
@@ -641,156 +691,156 @@ void W5500_Socket_Set(void)
 	}
 }
 /*******************************************************************************
-* º¯ÊıÃû  : Socket_Connect
-* ÃèÊö    : ÉèÖÃÖ¸¶¨Socket(0~7)Îª¿Í»§¶ËÓëÔ¶³Ì·şÎñÆ÷Á¬½Ó
-* ÊäÈë    : s:´ıÉè¶¨µÄ¶Ë¿Ú
-* Êä³ö    : ÎŞ
-* ·µ»ØÖµ  : ³É¹¦·µ»ØTRUE(0xFF),Ê§°Ü·µ»ØFALSE(0x00)
-* ËµÃ÷    : µ±±¾»úSocket¹¤×÷ÔÚ¿Í»§¶ËÄ£Ê½Ê±,ÒıÓÃ¸Ã³ÌĞò,ÓëÔ¶³Ì·şÎñÆ÷½¨Á¢Á¬½Ó
-*			Èç¹ûÆô¶¯Á¬½Óºó³öÏÖ³¬Ê±ÖĞ¶Ï£¬ÔòÓë·şÎñÆ÷Á¬½ÓÊ§°Ü,ĞèÒªÖØĞÂµ÷ÓÃ¸Ã³ÌĞòÁ¬½Ó
-*			¸Ã³ÌĞòÃ¿µ÷ÓÃÒ»´Î,¾ÍÓë·şÎñÆ÷²úÉúÒ»´ÎÁ¬½Ó
+* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½  : Socket_Connect
+* ï¿½ï¿½ï¿½ï¿½    : ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½Socket(0~7)Îªï¿½Í»ï¿½ï¿½ï¿½ï¿½ï¿½Ô¶ï¿½Ì·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½    : s:ï¿½ï¿½ï¿½è¶¨ï¿½Ä¶Ë¿ï¿½
+* ï¿½ï¿½ï¿½    : ï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½Öµ  : ï¿½É¹ï¿½ï¿½ï¿½ï¿½ï¿½TRUE(0xFF),Ê§ï¿½Ü·ï¿½ï¿½ï¿½FALSE(0x00)
+* Ëµï¿½ï¿½    : ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Socketï¿½ï¿½ï¿½ï¿½ï¿½Ú¿Í»ï¿½ï¿½ï¿½Ä£Ê½Ê±,ï¿½ï¿½ï¿½Ã¸Ã³ï¿½ï¿½ï¿½,ï¿½ï¿½Ô¶ï¿½Ì·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+*			ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Óºï¿½ï¿½ï¿½Ö³ï¿½Ê±ï¿½Ğ¶Ï£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê§ï¿½ï¿½,ï¿½ï¿½Òªï¿½ï¿½ï¿½Âµï¿½ï¿½Ã¸Ã³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+*			ï¿½Ã³ï¿½ï¿½ï¿½Ã¿ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 *******************************************************************************/
 unsigned char Socket_Connect(SOCKET s)
 {
 	OS_ERR  err;
-	Write_W5500_SOCK_1Byte(s,Sn_MR,MR_TCP);//ÉèÖÃsocketÎªTCPÄ£Ê½
-	Write_W5500_SOCK_1Byte(s,Sn_CR,OPEN);//´ò¿ªSocket
-	//Delay(5);//ÑÓÊ±5ms
+	Write_W5500_SOCK_1Byte(s,Sn_MR,MR_TCP);//ï¿½ï¿½ï¿½ï¿½socketÎªTCPÄ£Ê½
+	Write_W5500_SOCK_1Byte(s,Sn_CR,OPEN);//ï¿½ï¿½Socket
+	//Delay(5);//ï¿½ï¿½Ê±5ms
 	OSTimeDlyHMSM(0u, 0u, 0u, 8u,
 					OS_OPT_TIME_HMSM_STRICT,
 					&err);
-	if(Read_W5500_SOCK_1Byte(s,Sn_SR)!=SOCK_INIT)//Èç¹ûsocket´ò¿ªÊ§°Ü
+	if(Read_W5500_SOCK_1Byte(s,Sn_SR)!=SOCK_INIT)//ï¿½ï¿½ï¿½socketï¿½ï¿½Ê§ï¿½ï¿½
 	{
-		Write_W5500_SOCK_1Byte(s,Sn_CR,CLOSE);//´ò¿ª²»³É¹¦,¹Ø±ÕSocket
-		return FALSE;//·µ»ØFALSE(0x00)
+		Write_W5500_SOCK_1Byte(s,Sn_CR,CLOSE);//ï¿½ò¿ª²ï¿½ï¿½É¹ï¿½,ï¿½Ø±ï¿½Socket
+		return FALSE;//ï¿½ï¿½ï¿½ï¿½FALSE(0x00)
 	}
-	Write_W5500_SOCK_1Byte(s,Sn_CR,CONNECT);//ÉèÖÃSocketÎªConnectÄ£Ê½
-	return TRUE;//·µ»ØTRUE,ÉèÖÃ³É¹¦
+	Write_W5500_SOCK_1Byte(s,Sn_CR,CONNECT);//ï¿½ï¿½ï¿½ï¿½SocketÎªConnectÄ£Ê½
+	return TRUE;//ï¿½ï¿½ï¿½ï¿½TRUE,ï¿½ï¿½ï¿½Ã³É¹ï¿½
 }
 /*******************************************************************************
-* º¯ÊıÃû  : Socket_Listen
-* ÃèÊö    : ÉèÖÃÖ¸¶¨Socket(0~7)×÷Îª·şÎñÆ÷µÈ´ıÔ¶³ÌÖ÷»úµÄÁ¬½Ó
-* ÊäÈë    : s:´ıÉè¶¨µÄ¶Ë¿Ú
-* Êä³ö    : ÎŞ
-* ·µ»ØÖµ  : ³É¹¦·µ»ØTRUE(0xFF),Ê§°Ü·µ»ØFALSE(0x00)
-* ËµÃ÷    : µ±±¾»úSocket¹¤×÷ÔÚ·şÎñÆ÷Ä£Ê½Ê±,ÒıÓÃ¸Ã³ÌĞò,µÈµÈÔ¶³ÌÖ÷»úµÄÁ¬½Ó
-*			¸Ã³ÌĞòÖ»µ÷ÓÃÒ»´Î,¾ÍÊ¹W5500ÉèÖÃÎª·şÎñÆ÷Ä£Ê½
+* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½  : Socket_Listen
+* ï¿½ï¿½ï¿½ï¿½    : ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½Socket(0~7)ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È´ï¿½Ô¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½    : s:ï¿½ï¿½ï¿½è¶¨ï¿½Ä¶Ë¿ï¿½
+* ï¿½ï¿½ï¿½    : ï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½Öµ  : ï¿½É¹ï¿½ï¿½ï¿½ï¿½ï¿½TRUE(0xFF),Ê§ï¿½Ü·ï¿½ï¿½ï¿½FALSE(0x00)
+* Ëµï¿½ï¿½    : ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Socketï¿½ï¿½ï¿½ï¿½ï¿½Ú·ï¿½ï¿½ï¿½ï¿½ï¿½Ä£Ê½Ê±,ï¿½ï¿½ï¿½Ã¸Ã³ï¿½ï¿½ï¿½,ï¿½Èµï¿½Ô¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+*			ï¿½Ã³ï¿½ï¿½ï¿½Ö»ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½,ï¿½ï¿½Ê¹W5500ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä£Ê½
 *******************************************************************************/
 unsigned char Socket_Listen(SOCKET s)
 {
 	  OS_ERR  err;
-	Write_W5500_SOCK_1Byte(s,Sn_MR,MR_TCP);//ÉèÖÃsocketÎªTCPÄ£Ê½ 
-	Write_W5500_SOCK_1Byte(s,Sn_CR,OPEN);//´ò¿ªSocket	
-	//Delay(5);//ÑÓÊ±5ms
+	Write_W5500_SOCK_1Byte(s,Sn_MR,MR_TCP);//ï¿½ï¿½ï¿½ï¿½socketÎªTCPÄ£Ê½ 
+	Write_W5500_SOCK_1Byte(s,Sn_CR,OPEN);//ï¿½ï¿½Socket	
+	//Delay(5);//ï¿½ï¿½Ê±5ms
 	OSTimeDlyHMSM(0u, 0u, 0u, 5u,
 					OS_OPT_TIME_HMSM_STRICT,
 					&err);
-	if(Read_W5500_SOCK_1Byte(s,Sn_SR)!=SOCK_INIT)//Èç¹ûsocket´ò¿ªÊ§°Ü
+	if(Read_W5500_SOCK_1Byte(s,Sn_SR)!=SOCK_INIT)//ï¿½ï¿½ï¿½socketï¿½ï¿½Ê§ï¿½ï¿½
 	{
-		Write_W5500_SOCK_1Byte(s,Sn_CR,CLOSE);//´ò¿ª²»³É¹¦,¹Ø±ÕSocket
-		return FALSE;//·µ»ØFALSE(0x00)
+		Write_W5500_SOCK_1Byte(s,Sn_CR,CLOSE);//ï¿½ò¿ª²ï¿½ï¿½É¹ï¿½,ï¿½Ø±ï¿½Socket
+		return FALSE;//ï¿½ï¿½ï¿½ï¿½FALSE(0x00)
 	}	
-	Write_W5500_SOCK_1Byte(s,Sn_CR,LISTEN);//ÉèÖÃSocketÎªÕìÌıÄ£Ê½	
-//	Delay(5);//ÑÓÊ±5ms
+	Write_W5500_SOCK_1Byte(s,Sn_CR,LISTEN);//ï¿½ï¿½ï¿½ï¿½SocketÎªï¿½ï¿½ï¿½ï¿½Ä£Ê½	
+//	Delay(5);//ï¿½ï¿½Ê±5ms
 	OSTimeDlyHMSM(0u, 0u, 0u, 5u,
 				OS_OPT_TIME_HMSM_STRICT,
 				&err);
-	if(Read_W5500_SOCK_1Byte(s,Sn_SR)!=SOCK_LISTEN)//Èç¹ûsocketÉèÖÃÊ§°Ü
+	if(Read_W5500_SOCK_1Byte(s,Sn_SR)!=SOCK_LISTEN)//ï¿½ï¿½ï¿½socketï¿½ï¿½ï¿½ï¿½Ê§ï¿½ï¿½
 	{
-		Write_W5500_SOCK_1Byte(s,Sn_CR,CLOSE);//ÉèÖÃ²»³É¹¦,¹Ø±ÕSocket
-		return FALSE;//·µ»ØFALSE(0x00)
+		Write_W5500_SOCK_1Byte(s,Sn_CR,CLOSE);//ï¿½ï¿½ï¿½Ã²ï¿½ï¿½É¹ï¿½,ï¿½Ø±ï¿½Socket
+		return FALSE;//ï¿½ï¿½ï¿½ï¿½FALSE(0x00)
 	}
 
 	return TRUE;
 
-	//ÖÁ´ËÍê³ÉÁËSocketµÄ´ò¿ªºÍÉèÖÃÕìÌı¹¤×÷,ÖÁÓÚÔ¶³Ì¿Í»§¶ËÊÇ·ñÓëËü½¨Á¢Á¬½Ó,ÔòĞèÒªµÈ´ıSocketÖĞ¶Ï£¬
-	//ÒÔÅĞ¶ÏSocketµÄÁ¬½ÓÊÇ·ñ³É¹¦¡£²Î¿¼W5500Êı¾İÊÖ²áµÄSocketÖĞ¶Ï×´Ì¬
-	//ÔÚ·şÎñÆ÷ÕìÌıÄ£Ê½²»ĞèÒªÉèÖÃÄ¿µÄIPºÍÄ¿µÄ¶Ë¿ÚºÅ
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Socketï¿½Ä´ò¿ªºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½Ô¶ï¿½Ì¿Í»ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½Òªï¿½È´ï¿½Socketï¿½Ğ¶Ï£ï¿½
+	//ï¿½ï¿½ï¿½Ğ¶ï¿½Socketï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½É¹ï¿½ï¿½ï¿½ï¿½Î¿ï¿½W5500ï¿½ï¿½ï¿½ï¿½ï¿½Ö²ï¿½ï¿½Socketï¿½Ğ¶ï¿½×´Ì¬
+	//ï¿½Ú·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä£Ê½ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½Ä¿ï¿½ï¿½IPï¿½ï¿½Ä¿ï¿½Ä¶Ë¿Úºï¿½
 }
 /*******************************************************************************
-* º¯ÊıÃû  : Socket_UDP
-* ÃèÊö    : ÉèÖÃÖ¸¶¨Socket(0~7)ÎªUDPÄ£Ê½
-* ÊäÈë    : s:´ıÉè¶¨µÄ¶Ë¿Ú
-* Êä³ö    : ÎŞ
-* ·µ»ØÖµ  : ³É¹¦·µ»ØTRUE(0xFF),Ê§°Ü·µ»ØFALSE(0x00)
-* ËµÃ÷    : Èç¹ûSocket¹¤×÷ÔÚUDPÄ£Ê½,ÒıÓÃ¸Ã³ÌĞò,ÔÚUDPÄ£Ê½ÏÂ,SocketÍ¨ĞÅ²»ĞèÒª½¨Á¢Á¬½Ó
-*			¸Ã³ÌĞòÖ»µ÷ÓÃÒ»´Î£¬¾ÍÊ¹W5500ÉèÖÃÎªUDPÄ£Ê½
+* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½  : Socket_UDP
+* ï¿½ï¿½ï¿½ï¿½    : ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½Socket(0~7)ÎªUDPÄ£Ê½
+* ï¿½ï¿½ï¿½ï¿½    : s:ï¿½ï¿½ï¿½è¶¨ï¿½Ä¶Ë¿ï¿½
+* ï¿½ï¿½ï¿½    : ï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½Öµ  : ï¿½É¹ï¿½ï¿½ï¿½ï¿½ï¿½TRUE(0xFF),Ê§ï¿½Ü·ï¿½ï¿½ï¿½FALSE(0x00)
+* Ëµï¿½ï¿½    : ï¿½ï¿½ï¿½Socketï¿½ï¿½ï¿½ï¿½ï¿½ï¿½UDPÄ£Ê½,ï¿½ï¿½ï¿½Ã¸Ã³ï¿½ï¿½ï¿½,ï¿½ï¿½UDPÄ£Ê½ï¿½ï¿½,SocketÍ¨ï¿½Å²ï¿½ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+*			ï¿½Ã³ï¿½ï¿½ï¿½Ö»ï¿½ï¿½ï¿½ï¿½Ò»ï¿½Î£ï¿½ï¿½ï¿½Ê¹W5500ï¿½ï¿½ï¿½ï¿½ÎªUDPÄ£Ê½
 *******************************************************************************/
 unsigned char Socket_UDP(SOCKET s)
 {
 	OS_ERR  err;
-	Write_W5500_SOCK_1Byte(s,Sn_MR,MR_UDP);//ÉèÖÃSocketÎªUDPÄ£Ê½*/
-	Write_W5500_SOCK_1Byte(s,Sn_CR,OPEN);//´ò¿ªSocket*/
-	//Delay(5);//ÑÓÊ±5ms
+	Write_W5500_SOCK_1Byte(s,Sn_MR,MR_UDP);//ï¿½ï¿½ï¿½ï¿½SocketÎªUDPÄ£Ê½*/
+	Write_W5500_SOCK_1Byte(s,Sn_CR,OPEN);//ï¿½ï¿½Socket*/
+	//Delay(5);//ï¿½ï¿½Ê±5ms
 	OSTimeDlyHMSM(0u, 0u, 0u, 5u,
 					OS_OPT_TIME_HMSM_STRICT,
 					&err);
-	if(Read_W5500_SOCK_1Byte(s,Sn_SR)!=SOCK_UDP)//Èç¹ûSocket´ò¿ªÊ§°Ü
+	if(Read_W5500_SOCK_1Byte(s,Sn_SR)!=SOCK_UDP)//ï¿½ï¿½ï¿½Socketï¿½ï¿½Ê§ï¿½ï¿½
 	{
-		Write_W5500_SOCK_1Byte(s,Sn_CR,CLOSE);//´ò¿ª²»³É¹¦,¹Ø±ÕSocket
-		return FALSE;//·µ»ØFALSE(0x00)
+		Write_W5500_SOCK_1Byte(s,Sn_CR,CLOSE);//ï¿½ò¿ª²ï¿½ï¿½É¹ï¿½,ï¿½Ø±ï¿½Socket
+		return FALSE;//ï¿½ï¿½ï¿½ï¿½FALSE(0x00)
 	}
 	else
 		return TRUE;
-	//ÖÁ´ËÍê³ÉÁËSocketµÄ´ò¿ªºÍUDPÄ£Ê½ÉèÖÃ,ÔÚÕâÖÖÄ£Ê½ÏÂËü²»ĞèÒªÓëÔ¶³ÌÖ÷»ú½¨Á¢Á¬½Ó
-	//ÒòÎªSocket²»ĞèÒª½¨Á¢Á¬½Ó,ËùÒÔÔÚ·¢ËÍÊı¾İÇ°¶¼¿ÉÒÔÉèÖÃÄ¿µÄÖ÷»úIPºÍÄ¿µÄSocketµÄ¶Ë¿ÚºÅ
-	//Èç¹ûÄ¿µÄÖ÷»úIPºÍÄ¿µÄSocketµÄ¶Ë¿ÚºÅÊÇ¹Ì¶¨µÄ,ÔÚÔËĞĞ¹ı³ÌÖĞÃ»ÓĞ¸Ä±ä,ÄÇÃ´Ò²¿ÉÒÔÔÚÕâÀïÉèÖÃ
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Socketï¿½Ä´ò¿ªºï¿½UDPÄ£Ê½ï¿½ï¿½ï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä£Ê½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½Ô¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	//ï¿½ï¿½ÎªSocketï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½ï¿½Ú·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½IPï¿½ï¿½Ä¿ï¿½ï¿½Socketï¿½Ä¶Ë¿Úºï¿½
+	//ï¿½ï¿½ï¿½Ä¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½IPï¿½ï¿½Ä¿ï¿½ï¿½Socketï¿½Ä¶Ë¿Úºï¿½ï¿½Ç¹Ì¶ï¿½ï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½ï¿½Ğ¹ï¿½ï¿½ï¿½ï¿½ï¿½Ã»ï¿½Ğ¸Ä±ï¿½,ï¿½ï¿½Ã´Ò²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 }
 
 /*******************************************************************************
-* º¯ÊıÃû  : W5500_Interrupt_Process
-* ÃèÊö    : W5500ÖĞ¶Ï´¦Àí³ÌĞò¿ò¼Ü
-* ÊäÈë    : ÎŞ
-* Êä³ö    : ÎŞ
-* ·µ»ØÖµ  : ÎŞ
-* ËµÃ÷    : ÎŞ
+* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½  : W5500_Interrupt_Process
+* ï¿½ï¿½ï¿½ï¿½    : W5500ï¿½Ğ¶Ï´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½    : ï¿½ï¿½
+* ï¿½ï¿½ï¿½    : ï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½Öµ  : ï¿½ï¿½
+* Ëµï¿½ï¿½    : ï¿½ï¿½
 *******************************************************************************/
 void W5500_Interrupt_Process(void)
 {
 	unsigned char i,j;
 
 IntDispose:
-	W5500_Interrupt=0;//ÇåÁãÖĞ¶Ï±êÖ¾
-	i = Read_W5500_1Byte(IR);//¶ÁÈ¡ÖĞ¶Ï±êÖ¾¼Ä´æÆ÷
-	Write_W5500_1Byte(IR, (i&0xf0));//»ØĞ´Çå³ıÖĞ¶Ï±êÖ¾
+	W5500_Interrupt=0;//ï¿½ï¿½ï¿½ï¿½ï¿½Ğ¶Ï±ï¿½Ö¾
+	i = Read_W5500_1Byte(IR);//ï¿½ï¿½È¡ï¿½Ğ¶Ï±ï¿½Ö¾ï¿½Ä´ï¿½ï¿½ï¿½
+	Write_W5500_1Byte(IR, (i&0xf0));//ï¿½ï¿½Ğ´ï¿½ï¿½ï¿½ï¿½Ğ¶Ï±ï¿½Ö¾
 
-	if((i & CONFLICT) == CONFLICT)//IPµØÖ·³åÍ»Òì³£´¦Àí
+	if((i & CONFLICT) == CONFLICT)//IPï¿½ï¿½Ö·ï¿½ï¿½Í»ï¿½ì³£ï¿½ï¿½ï¿½ï¿½
 	{
-		 //×Ô¼ºÌí¼Ó´úÂë
+		 //ï¿½Ô¼ï¿½ï¿½ï¿½ï¿½Ó´ï¿½ï¿½ï¿½
 	}
 
-	if((i & UNREACH) == UNREACH)//UDPÄ£Ê½ÏÂµØÖ·ÎŞ·¨µ½´ïÒì³£´¦Àí
+	if((i & UNREACH) == UNREACH)//UDPÄ£Ê½ï¿½Âµï¿½Ö·ï¿½Ş·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ì³£ï¿½ï¿½ï¿½ï¿½
 	{
-		//×Ô¼ºÌí¼Ó´úÂë
+		//ï¿½Ô¼ï¿½ï¿½ï¿½ï¿½Ó´ï¿½ï¿½ï¿½
 	}
 
-	i=Read_W5500_1Byte(SIR);//¶ÁÈ¡¶Ë¿ÚÖĞ¶Ï±êÖ¾¼Ä´æÆ÷	
-	if((i & S0_INT) == S0_INT)//Socket0ÊÂ¼ş´¦Àí 
+	i=Read_W5500_1Byte(SIR);//ï¿½ï¿½È¡ï¿½Ë¿ï¿½ï¿½Ğ¶Ï±ï¿½Ö¾ï¿½Ä´ï¿½ï¿½ï¿½	
+	if((i & S0_INT) == S0_INT)//Socket0ï¿½Â¼ï¿½ï¿½ï¿½ï¿½ï¿½ 
 	{
-		j=Read_W5500_SOCK_1Byte(0,Sn_IR);//¶ÁÈ¡Socket0ÖĞ¶Ï±êÖ¾¼Ä´æÆ÷
+		j=Read_W5500_SOCK_1Byte(0,Sn_IR);//ï¿½ï¿½È¡Socket0ï¿½Ğ¶Ï±ï¿½Ö¾ï¿½Ä´ï¿½ï¿½ï¿½
 		Write_W5500_SOCK_1Byte(0,Sn_IR,j);
-		if(j&IR_CON)//ÔÚTCPÄ£Ê½ÏÂ,Socket0³É¹¦Á¬½Ó 
+		if(j&IR_CON)//ï¿½ï¿½TCPÄ£Ê½ï¿½ï¿½,Socket0ï¿½É¹ï¿½ï¿½ï¿½ï¿½ï¿½ 
 		{
-			S0_State|=S_CONN;//ÍøÂçÁ¬½Ó×´Ì¬0x02,¶Ë¿ÚÍê³ÉÁ¬½Ó£¬¿ÉÒÔÕı³£´«ÊäÊı¾İ
+			S0_State|=S_CONN;//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×´Ì¬0x02,ï¿½Ë¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		}
-		if(j&IR_DISCON)//ÔÚTCPÄ£Ê½ÏÂSocket¶Ï¿ªÁ¬½Ó´¦Àí
+		if(j&IR_DISCON)//ï¿½ï¿½TCPÄ£Ê½ï¿½ï¿½Socketï¿½Ï¿ï¿½ï¿½ï¿½ï¿½Ó´ï¿½ï¿½ï¿½
 		{
-			Write_W5500_SOCK_1Byte(0,Sn_CR,CLOSE);//¹Ø±Õ¶Ë¿Ú,µÈ´ıÖØĞÂ´ò¿ªÁ¬½Ó 
-			Socket_Init(0);		//Ö¸¶¨Socket(0~7)³õÊ¼»¯,³õÊ¼»¯¶Ë¿Ú0
-			S0_State=0;//ÍøÂçÁ¬½Ó×´Ì¬0x00,¶Ë¿ÚÁ¬½ÓÊ§°Ü
+			Write_W5500_SOCK_1Byte(0,Sn_CR,CLOSE);//ï¿½Ø±Õ¶Ë¿ï¿½,ï¿½È´ï¿½ï¿½ï¿½ï¿½Â´ï¿½ï¿½ï¿½ï¿½ï¿½ 
+			Socket_Init(0);		//Ö¸ï¿½ï¿½Socket(0~7)ï¿½ï¿½Ê¼ï¿½ï¿½,ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½Ë¿ï¿½0
+			S0_State=0;//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×´Ì¬0x00,ï¿½Ë¿ï¿½ï¿½ï¿½ï¿½ï¿½Ê§ï¿½ï¿½
 		}
-		if(j&IR_SEND_OK)//Socket0Êı¾İ·¢ËÍÍê³É,¿ÉÒÔÔÙ´ÎÆô¶¯S_tx_process()º¯Êı·¢ËÍÊı¾İ 
+		if(j&IR_SEND_OK)//Socket0ï¿½ï¿½ï¿½İ·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½ï¿½Ù´ï¿½ï¿½ï¿½ï¿½ï¿½S_tx_process()ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 
 		{
-			S0_Data|=S_TRANSMITOK;//¶Ë¿Ú·¢ËÍÒ»¸öÊı¾İ°üÍê³É 
+			S0_Data|=S_TRANSMITOK;//ï¿½Ë¿Ú·ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½İ°ï¿½ï¿½ï¿½ï¿½ 
 		}
-		if(j&IR_RECV)//Socket½ÓÊÕµ½Êı¾İ,¿ÉÒÔÆô¶¯S_rx_process()º¯Êı 
+		if(j&IR_RECV)//Socketï¿½ï¿½ï¿½Õµï¿½ï¿½ï¿½ï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½S_rx_process()ï¿½ï¿½ï¿½ï¿½ 
 		{
-			S0_Data|=S_RECEIVE;//¶Ë¿Ú½ÓÊÕµ½Ò»¸öÊı¾İ°ü
+			S0_Data|=S_RECEIVE;//ï¿½Ë¿Ú½ï¿½ï¿½Õµï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½İ°ï¿½
 		}
-		if(j&IR_TIMEOUT)//SocketÁ¬½Ó»òÊı¾İ´«Êä³¬Ê±´¦Àí 
+		if(j&IR_TIMEOUT)//Socketï¿½ï¿½ï¿½Ó»ï¿½ï¿½ï¿½ï¿½İ´ï¿½ï¿½ä³¬Ê±ï¿½ï¿½ï¿½ï¿½ 
 		{
-			Write_W5500_SOCK_1Byte(0,Sn_CR,CLOSE);// ¹Ø±Õ¶Ë¿Ú,µÈ´ıÖØĞÂ´ò¿ªÁ¬½Ó 
-			S0_State=0;//ÍøÂçÁ¬½Ó×´Ì¬0x00,¶Ë¿ÚÁ¬½ÓÊ§°Ü
+			Write_W5500_SOCK_1Byte(0,Sn_CR,CLOSE);// ï¿½Ø±Õ¶Ë¿ï¿½,ï¿½È´ï¿½ï¿½ï¿½ï¿½Â´ï¿½ï¿½ï¿½ï¿½ï¿½ 
+			S0_State=0;//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×´Ì¬0x00,ï¿½Ë¿ï¿½ï¿½ï¿½ï¿½ï¿½Ê§ï¿½ï¿½
 		}
 	}
 
@@ -798,15 +848,15 @@ IntDispose:
 		goto IntDispose;
 }
 /*******************************************************************************
-* º¯ÊıÃû  : Process_Socket_Data
-* ÃèÊö    : W5500½ÓÊÕ²¢·¢ËÍ½ÓÊÕµ½µÄÊı¾İ
-* ÊäÈë    : s:¶Ë¿ÚºÅ
-* Êä³ö    : ÎŞ
-* ·µ»ØÖµ  : ÎŞ
-* ËµÃ÷    : ±¾¹ı³ÌÏÈµ÷ÓÃS_rx_process()´ÓW5500µÄ¶Ë¿Ú½ÓÊÕÊı¾İ»º³åÇø¶ÁÈ¡Êı¾İ,
-*			È»ºó½«¶ÁÈ¡µÄÊı¾İ´ÓRx_Buffer¿½±´µ½Temp_Buffer»º³åÇø½øĞĞ´¦Àí¡£
-*			´¦ÀíÍê±Ï£¬½«Êı¾İ´ÓTemp_Buffer¿½±´µ½Tx_Buffer»º³åÇø¡£µ÷ÓÃS_tx_process()
-*			·¢ËÍÊı¾İ¡£
+* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½  : Process_Socket_Data
+* ï¿½ï¿½ï¿½ï¿½    : W5500ï¿½ï¿½ï¿½Õ²ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½Õµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½    : s:ï¿½Ë¿Úºï¿½
+* ï¿½ï¿½ï¿½    : ï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½Öµ  : ï¿½ï¿½
+* Ëµï¿½ï¿½    : ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Èµï¿½ï¿½ï¿½S_rx_process()ï¿½ï¿½W5500ï¿½Ä¶Ë¿Ú½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½İ»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½,
+*			È»ï¿½ó½«¶ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½İ´ï¿½Rx_Bufferï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Temp_Bufferï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ğ´ï¿½ï¿½ï¿½ï¿½ï¿½
+*			ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½İ´ï¿½Temp_Bufferï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Tx_Bufferï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½S_tx_process()
+*			ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½İ¡ï¿½
 *******************************************************************************/
 void Process_Socket_Data(SOCKET s)
 {
@@ -817,101 +867,101 @@ void Process_Socket_Data(SOCKET s)
 }
 
 /*******************************************************************************
-* º¯ÊıÃû  : Write_SOCK_Data_Buffer
-* ÃèÊö    : ½«Êı¾İĞ´ÈëW5500µÄÊı¾İ·¢ËÍ»º³åÇø
-* ÊäÈë    : s:¶Ë¿ÚºÅ,*dat_ptr:Êı¾İ±£´æ»º³åÇøÖ¸Õë,size:´ıĞ´ÈëÊı¾İµÄ³¤¶È
-* Êä³ö    : ÎŞ
-* ·µ»ØÖµ  : ÎŞ
-* ËµÃ÷    : ÎŞ
+* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½  : Write_SOCK_Data_Buffer
+* ï¿½ï¿½ï¿½ï¿½    : ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ğ´ï¿½ï¿½W5500ï¿½ï¿½ï¿½ï¿½ï¿½İ·ï¿½ï¿½Í»ï¿½ï¿½ï¿½ï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½    : s:ï¿½Ë¿Úºï¿½,*dat_ptr:ï¿½ï¿½ï¿½İ±ï¿½ï¿½æ»ºï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½,size:ï¿½ï¿½Ğ´ï¿½ï¿½ï¿½ï¿½ï¿½İµÄ³ï¿½ï¿½ï¿½
+* ï¿½ï¿½ï¿½    : ï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½Öµ  : ï¿½ï¿½
+* Ëµï¿½ï¿½    : ï¿½ï¿½
 *******************************************************************************/
 void Write_SOCK_Data_Buffer(SOCKET s, unsigned char *dat_ptr, unsigned short size)
 {
 	unsigned short offset,offset1;
 	unsigned short i;
 
-	//Èç¹ûÊÇUDPÄ£Ê½,¿ÉÒÔÔÚ´ËÉèÖÃÄ¿µÄÖ÷»úµÄIPºÍ¶Ë¿ÚºÅ
-	if((Read_W5500_SOCK_1Byte(s,Sn_MR)&0x0f) != SOCK_UDP)//Èç¹ûSocket´ò¿ªÊ§°Ü
+	//ï¿½ï¿½ï¿½ï¿½ï¿½UDPÄ£Ê½,ï¿½ï¿½ï¿½ï¿½ï¿½Ú´ï¿½ï¿½ï¿½ï¿½ï¿½Ä¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½IPï¿½Í¶Ë¿Úºï¿½
+	if((Read_W5500_SOCK_1Byte(s,Sn_MR)&0x0f) != SOCK_UDP)//ï¿½ï¿½ï¿½Socketï¿½ï¿½Ê§ï¿½ï¿½
 	{		
-		Write_W5500_SOCK_4Byte(s, Sn_DIPR, UDP_DIPR);//ÉèÖÃÄ¿µÄÖ÷»úIP  		
-		Write_W5500_SOCK_2Byte(s, Sn_DPORTR, UDP_DPORT[0]*256+UDP_DPORT[1]);//ÉèÖÃÄ¿µÄÖ÷»ú¶Ë¿ÚºÅ				
+		Write_W5500_SOCK_4Byte(s, Sn_DIPR, UDP_DIPR);//ï¿½ï¿½ï¿½ï¿½Ä¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½IP  		
+		Write_W5500_SOCK_2Byte(s, Sn_DPORTR, UDP_DPORT[0]*256+UDP_DPORT[1]);//ï¿½ï¿½ï¿½ï¿½Ä¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¿Úºï¿½				
 	}
 
 	offset=Read_W5500_SOCK_2Byte(s,Sn_TX_WR);
 	offset1=offset;
-	offset&=(S_TX_SIZE-1);//¼ÆËãÊµ¼ÊµÄÎïÀíµØÖ·
+	offset&=(S_TX_SIZE-1);//ï¿½ï¿½ï¿½ï¿½Êµï¿½Êµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö·
 
-	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);//ÖÃW5500µÄSCSÎªµÍµçÆ½
+	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);//ï¿½ï¿½W5500ï¿½ï¿½SCSÎªï¿½Íµï¿½Æ½
 
-	SPI1_Send_Short(offset);//Ğ´16Î»µØÖ·
-	SPI1_Send_Byte(VDM|RWB_WRITE|(s*0x20+0x10));//Ğ´¿ØÖÆ×Ö½Ú,N¸ö×Ö½ÚÊı¾İ³¤¶È,Ğ´Êı¾İ,Ñ¡Ôñ¶Ë¿ÚsµÄ¼Ä´æÆ÷
+	SPI2_Send_Short(offset);//Ğ´16Î»ï¿½ï¿½Ö·
+	SPI2_Send_Byte(VDM|RWB_WRITE|(s*0x20+0x10));//Ğ´ï¿½ï¿½ï¿½ï¿½ï¿½Ö½ï¿½,Nï¿½ï¿½ï¿½Ö½ï¿½ï¿½ï¿½ï¿½İ³ï¿½ï¿½ï¿½,Ğ´ï¿½ï¿½ï¿½ï¿½,Ñ¡ï¿½ï¿½Ë¿ï¿½sï¿½Ä¼Ä´ï¿½ï¿½ï¿½
 
-	if((offset+size)<S_TX_SIZE)//Èç¹û×î´óµØÖ·Î´³¬¹ıW5500·¢ËÍ»º³åÇø¼Ä´æÆ÷µÄ×î´óµØÖ·
+	if((offset+size)<S_TX_SIZE)//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö·Î´ï¿½ï¿½ï¿½ï¿½W5500ï¿½ï¿½ï¿½Í»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö·
 	{
-		for(i=0;i<size;i++)//Ñ­»·Ğ´Èësize¸ö×Ö½ÚÊı¾İ
+		for(i=0;i<size;i++)//Ñ­ï¿½ï¿½Ğ´ï¿½ï¿½sizeï¿½ï¿½ï¿½Ö½ï¿½ï¿½ï¿½ï¿½ï¿½
 		{
-			SPI1_Send_Byte(*dat_ptr++);//Ğ´ÈëÒ»¸ö×Ö½ÚµÄÊı¾İ		
+			SPI2_Send_Byte(*dat_ptr++);//Ğ´ï¿½ï¿½Ò»ï¿½ï¿½ï¿½Ö½Úµï¿½ï¿½ï¿½ï¿½ï¿½		
 		}
 	}
-	else//Èç¹û×î´óµØÖ·³¬¹ıW5500·¢ËÍ»º³åÇø¼Ä´æÆ÷µÄ×î´óµØÖ·
+	else//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö·ï¿½ï¿½ï¿½ï¿½W5500ï¿½ï¿½ï¿½Í»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö·
 	{
 		offset=S_TX_SIZE-offset;
-		for(i=0;i<offset;i++)//Ñ­»·Ğ´ÈëÇ°offset¸ö×Ö½ÚÊı¾İ
+		for(i=0;i<offset;i++)//Ñ­ï¿½ï¿½Ğ´ï¿½ï¿½Ç°offsetï¿½ï¿½ï¿½Ö½ï¿½ï¿½ï¿½ï¿½ï¿½
 		{
-			SPI1_Send_Byte(*dat_ptr++);//Ğ´ÈëÒ»¸ö×Ö½ÚµÄÊı¾İ
+			SPI2_Send_Byte(*dat_ptr++);//Ğ´ï¿½ï¿½Ò»ï¿½ï¿½ï¿½Ö½Úµï¿½ï¿½ï¿½ï¿½ï¿½
 		}
-		GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin); //ÖÃW5500µÄSCSÎª¸ßµçÆ½
+		GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin); //ï¿½ï¿½W5500ï¿½ï¿½SCSÎªï¿½ßµï¿½Æ½
 
-		GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);//ÖÃW5500µÄSCSÎªµÍµçÆ½
+		GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);//ï¿½ï¿½W5500ï¿½ï¿½SCSÎªï¿½Íµï¿½Æ½
 
-		SPI1_Send_Short(0x00);//Ğ´16Î»µØÖ·
-		SPI1_Send_Byte(VDM|RWB_WRITE|(s*0x20+0x10));//Ğ´¿ØÖÆ×Ö½Ú,N¸ö×Ö½ÚÊı¾İ³¤¶È,Ğ´Êı¾İ,Ñ¡Ôñ¶Ë¿ÚsµÄ¼Ä´æÆ÷
+		SPI2_Send_Short(0x00);//Ğ´16Î»ï¿½ï¿½Ö·
+		SPI2_Send_Byte(VDM|RWB_WRITE|(s*0x20+0x10));//Ğ´ï¿½ï¿½ï¿½ï¿½ï¿½Ö½ï¿½,Nï¿½ï¿½ï¿½Ö½ï¿½ï¿½ï¿½ï¿½İ³ï¿½ï¿½ï¿½,Ğ´ï¿½ï¿½ï¿½ï¿½,Ñ¡ï¿½ï¿½Ë¿ï¿½sï¿½Ä¼Ä´ï¿½ï¿½ï¿½
 
-		for(;i<size;i++)//Ñ­»·Ğ´Èësize-offset¸ö×Ö½ÚÊı¾İ
+		for(;i<size;i++)//Ñ­ï¿½ï¿½Ğ´ï¿½ï¿½size-offsetï¿½ï¿½ï¿½Ö½ï¿½ï¿½ï¿½ï¿½ï¿½
 		{
-			SPI1_Send_Byte(*dat_ptr++);//Ğ´ÈëÒ»¸ö×Ö½ÚµÄÊı¾İ
+			SPI2_Send_Byte(*dat_ptr++);//Ğ´ï¿½ï¿½Ò»ï¿½ï¿½ï¿½Ö½Úµï¿½ï¿½ï¿½ï¿½ï¿½
 		}
 	}
-	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin); //ÖÃW5500µÄSCSÎª¸ßµçÆ½
+	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin); //ï¿½ï¿½W5500ï¿½ï¿½SCSÎªï¿½ßµï¿½Æ½
 
-	offset1+=size;//¸üĞÂÊµ¼ÊÎïÀíµØÖ·,¼´ÏÂ´ÎĞ´´ı·¢ËÍÊı¾İµ½·¢ËÍÊı¾İ»º³åÇøµÄÆğÊ¼µØÖ·
+	offset1+=size;//ï¿½ï¿½ï¿½ï¿½Êµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö·,ï¿½ï¿½ï¿½Â´ï¿½Ğ´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½İµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½İ»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½Ö·
 	Write_W5500_SOCK_2Byte(s, Sn_TX_WR, offset1);
-	Write_W5500_SOCK_1Byte(s, Sn_CR, SEND);//·¢ËÍÆô¶¯·¢ËÍÃüÁî				
+	Write_W5500_SOCK_1Byte(s, Sn_CR, SEND);//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½				
 }
 /*******************************************************************************
-* º¯ÊıÃû  : Read_W5500_SOCK_2Byte
-* ÃèÊö    : ¶ÁW5500Ö¸¶¨¶Ë¿Ú¼Ä´æÆ÷µÄ2¸ö×Ö½ÚÊı¾İ
-* ÊäÈë    : s:¶Ë¿ÚºÅ,reg:16Î»¼Ä´æÆ÷µØÖ·
-* Êä³ö    : ÎŞ
-* ·µ»ØÖµ  : ¶ÁÈ¡µ½¼Ä´æÆ÷µÄ2¸ö×Ö½ÚÊı¾İ(16Î»)
-* ËµÃ÷    : ÎŞ
+* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½  : Read_W5500_SOCK_2Byte
+* ï¿½ï¿½ï¿½ï¿½    : ï¿½ï¿½W5500Ö¸ï¿½ï¿½ï¿½Ë¿Ú¼Ä´ï¿½ï¿½ï¿½ï¿½ï¿½2ï¿½ï¿½ï¿½Ö½ï¿½ï¿½ï¿½ï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½    : s:ï¿½Ë¿Úºï¿½,reg:16Î»ï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½Ö·
+* ï¿½ï¿½ï¿½    : ï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½Öµ  : ï¿½ï¿½È¡ï¿½ï¿½ï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½2ï¿½ï¿½ï¿½Ö½ï¿½ï¿½ï¿½ï¿½ï¿½(16Î»)
+* Ëµï¿½ï¿½    : ï¿½ï¿½
 *******************************************************************************/
 unsigned short Read_W5500_SOCK_2Byte(SOCKET s, unsigned short reg)
 {
 	unsigned short i;
 
-	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);//ÖÃW5500µÄSCSÎªµÍµçÆ½
+	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);//ï¿½ï¿½W5500ï¿½ï¿½SCSÎªï¿½Íµï¿½Æ½
 			
-	SPI1_Send_Short(reg);//Í¨¹ıSPI1Ğ´16Î»¼Ä´æÆ÷µØÖ·
-	SPI1_Send_Byte(FDM2|RWB_READ|(s*0x20+0x08));//Í¨¹ıSPI1Ğ´¿ØÖÆ×Ö½Ú,2¸ö×Ö½ÚÊı¾İ³¤¶È,¶ÁÊı¾İ,Ñ¡Ôñ¶Ë¿ÚsµÄ¼Ä´æÆ÷
+	SPI2_Send_Short(reg);//Í¨ï¿½ï¿½SPI1Ğ´16Î»ï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½Ö·
+	SPI2_Send_Byte(FDM2|RWB_READ|(s*0x20+0x08));//Í¨ï¿½ï¿½SPI1Ğ´ï¿½ï¿½ï¿½ï¿½ï¿½Ö½ï¿½,2ï¿½ï¿½ï¿½Ö½ï¿½ï¿½ï¿½ï¿½İ³ï¿½ï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½,Ñ¡ï¿½ï¿½Ë¿ï¿½sï¿½Ä¼Ä´ï¿½ï¿½ï¿½
 
 	i=SPI_I2S_ReceiveData(SPI_SEL);
-	SPI1_Send_Byte(0x00);//·¢ËÍÒ»¸öÑÆÊı¾İ
-	i=SPI_I2S_ReceiveData(SPI_SEL);//¶ÁÈ¡¸ßÎ»Êı¾İ
-	SPI1_Send_Byte(0x00);//·¢ËÍÒ»¸öÑÆÊı¾İ
+	SPI2_Send_Byte(0x00);//ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	i=SPI_I2S_ReceiveData(SPI_SEL);//ï¿½ï¿½È¡ï¿½ï¿½Î»ï¿½ï¿½ï¿½ï¿½
+	SPI2_Send_Byte(0x00);//ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	i*=256;
-	i+=SPI_I2S_ReceiveData(SPI_SEL);//¶ÁÈ¡µÍÎ»Êı¾İ
+	i+=SPI_I2S_ReceiveData(SPI_SEL);//ï¿½ï¿½È¡ï¿½ï¿½Î»ï¿½ï¿½ï¿½ï¿½
 
-	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin);//ÖÃW5500µÄSCSÎª¸ßµçÆ½
-	return i;//·µ»Ø¶ÁÈ¡µ½µÄ¼Ä´æÆ÷Êı¾İ
+	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin);//ï¿½ï¿½W5500ï¿½ï¿½SCSÎªï¿½ßµï¿½Æ½
+	return i;//ï¿½ï¿½ï¿½Ø¶ï¿½È¡ï¿½ï¿½ï¿½Ä¼Ä´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 }
 
 /*******************************************************************************
-* º¯ÊıÃû  : Read_SOCK_Data_Buffer
-* ÃèÊö    : ´ÓW5500½ÓÊÕÊı¾İ»º³åÇøÖĞ¶ÁÈ¡Êı¾İ
-* ÊäÈë    : s:¶Ë¿ÚºÅ,*dat_ptr:Êı¾İ±£´æ»º³åÇøÖ¸Õë
-* Êä³ö    : ÎŞ
-* ·µ»ØÖµ  : ¶ÁÈ¡µ½µÄÊı¾İ³¤¶È,rx_size¸ö×Ö½Ú
-* ËµÃ÷    : ÎŞ
+* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½  : Read_SOCK_Data_Buffer
+* ï¿½ï¿½ï¿½ï¿½    : ï¿½ï¿½W5500ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½İ»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ğ¶ï¿½È¡ï¿½ï¿½ï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½    : s:ï¿½Ë¿Úºï¿½,*dat_ptr:ï¿½ï¿½ï¿½İ±ï¿½ï¿½æ»ºï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½
+* ï¿½ï¿½ï¿½    : ï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½Öµ  : ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½İ³ï¿½ï¿½ï¿½,rx_sizeï¿½ï¿½ï¿½Ö½ï¿½
+* Ëµï¿½ï¿½    : ï¿½ï¿½
 *******************************************************************************/
 unsigned short Read_SOCK_Data_Buffer(SOCKET s, unsigned char *dat_ptr)
 {
@@ -921,61 +971,61 @@ unsigned short Read_SOCK_Data_Buffer(SOCKET s, unsigned char *dat_ptr)
 	unsigned char j;
 
 	rx_size=Read_W5500_SOCK_2Byte(s,Sn_RX_RSR);
-	if(rx_size==0) return 0;//Ã»½ÓÊÕµ½Êı¾İÔò·µ»Ø
+	if(rx_size==0) return 0;//Ã»ï¿½ï¿½ï¿½Õµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ò·µ»ï¿½
 	if(rx_size>1460) rx_size=1460;
 
 	offset=Read_W5500_SOCK_2Byte(s,Sn_RX_RD);
 	offset1=offset;
-	offset&=(S_RX_SIZE-1);//¼ÆËãÊµ¼ÊµÄÎïÀíµØÖ·
+	offset&=(S_RX_SIZE-1);//ï¿½ï¿½ï¿½ï¿½Êµï¿½Êµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö·
 
-	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);//ÖÃW5500µÄSCSÎªµÍµçÆ½
+	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);//ï¿½ï¿½W5500ï¿½ï¿½SCSÎªï¿½Íµï¿½Æ½
 
-	SPI1_Send_Short(offset);//Ğ´16Î»µØÖ·
-	SPI1_Send_Byte(VDM|RWB_READ|(s*0x20+0x18));//Ğ´¿ØÖÆ×Ö½Ú,N¸ö×Ö½ÚÊı¾İ³¤¶È,¶ÁÊı¾İ,Ñ¡Ôñ¶Ë¿ÚsµÄ¼Ä´æÆ÷
+	SPI2_Send_Short(offset);//Ğ´16Î»ï¿½ï¿½Ö·
+	SPI2_Send_Byte(VDM|RWB_READ|(s*0x20+0x18));//Ğ´ï¿½ï¿½ï¿½ï¿½ï¿½Ö½ï¿½,Nï¿½ï¿½ï¿½Ö½ï¿½ï¿½ï¿½ï¿½İ³ï¿½ï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½,Ñ¡ï¿½ï¿½Ë¿ï¿½sï¿½Ä¼Ä´ï¿½ï¿½ï¿½
 	j=SPI_I2S_ReceiveData(SPI_SEL);
 	
-	if((offset+rx_size)<S_RX_SIZE)//Èç¹û×î´óµØÖ·Î´³¬¹ıW5500½ÓÊÕ»º³åÇø¼Ä´æÆ÷µÄ×î´óµØÖ·
+	if((offset+rx_size)<S_RX_SIZE)//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö·Î´ï¿½ï¿½ï¿½ï¿½W5500ï¿½ï¿½ï¿½Õ»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö·
 	{
-		for(i=0;i<rx_size;i++)//Ñ­»·¶ÁÈ¡rx_size¸ö×Ö½ÚÊı¾İ
+		for(i=0;i<rx_size;i++)//Ñ­ï¿½ï¿½ï¿½ï¿½È¡rx_sizeï¿½ï¿½ï¿½Ö½ï¿½ï¿½ï¿½ï¿½ï¿½
 		{
-			SPI1_Send_Byte(0x00);//·¢ËÍÒ»¸öÑÆÊı¾İ
-			j=SPI_I2S_ReceiveData(SPI_SEL);//¶ÁÈ¡1¸ö×Ö½ÚÊı¾İ
-			*dat_ptr=j;//½«¶ÁÈ¡µ½µÄÊı¾İ±£´æµ½Êı¾İ±£´æ»º³åÇø
-			dat_ptr++;//Êı¾İ±£´æ»º³åÇøÖ¸ÕëµØÖ·×ÔÔö1
+			SPI2_Send_Byte(0x00);//ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+			j=SPI_I2S_ReceiveData(SPI_SEL);//ï¿½ï¿½È¡1ï¿½ï¿½ï¿½Ö½ï¿½ï¿½ï¿½ï¿½ï¿½
+			*dat_ptr=j;//ï¿½ï¿½ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½İ±ï¿½ï¿½æµ½ï¿½ï¿½ï¿½İ±ï¿½ï¿½æ»ºï¿½ï¿½ï¿½ï¿½
+			dat_ptr++;//ï¿½ï¿½ï¿½İ±ï¿½ï¿½æ»ºï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½Ö·ï¿½ï¿½ï¿½ï¿½1
 		}
 	}
-	else//Èç¹û×î´óµØÖ·³¬¹ıW5500½ÓÊÕ»º³åÇø¼Ä´æÆ÷µÄ×î´óµØÖ·
+	else//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö·ï¿½ï¿½ï¿½ï¿½W5500ï¿½ï¿½ï¿½Õ»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö·
 	{
 		offset=S_RX_SIZE-offset;
-		for(i=0;i<offset;i++)//Ñ­»·¶ÁÈ¡³öÇ°offset¸ö×Ö½ÚÊı¾İ
+		for(i=0;i<offset;i++)//Ñ­ï¿½ï¿½ï¿½ï¿½È¡ï¿½ï¿½Ç°offsetï¿½ï¿½ï¿½Ö½ï¿½ï¿½ï¿½ï¿½ï¿½
 		{
-			SPI1_Send_Byte(0x00);//·¢ËÍÒ»¸öÑÆÊı¾İ
-			j=SPI_I2S_ReceiveData(SPI_SEL);//¶ÁÈ¡1¸ö×Ö½ÚÊı¾İ
-			*dat_ptr=j;//½«¶ÁÈ¡µ½µÄÊı¾İ±£´æµ½Êı¾İ±£´æ»º³åÇø
-			dat_ptr++;//Êı¾İ±£´æ»º³åÇøÖ¸ÕëµØÖ·×ÔÔö1
+			SPI2_Send_Byte(0x00);//ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+			j=SPI_I2S_ReceiveData(SPI_SEL);//ï¿½ï¿½È¡1ï¿½ï¿½ï¿½Ö½ï¿½ï¿½ï¿½ï¿½ï¿½
+			*dat_ptr=j;//ï¿½ï¿½ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½İ±ï¿½ï¿½æµ½ï¿½ï¿½ï¿½İ±ï¿½ï¿½æ»ºï¿½ï¿½ï¿½ï¿½
+			dat_ptr++;//ï¿½ï¿½ï¿½İ±ï¿½ï¿½æ»ºï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½Ö·ï¿½ï¿½ï¿½ï¿½1
 		}
-		GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin); //ÖÃW5500µÄSCSÎª¸ßµçÆ½
+		GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin); //ï¿½ï¿½W5500ï¿½ï¿½SCSÎªï¿½ßµï¿½Æ½
 
-		GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);//ÖÃW5500µÄSCSÎªµÍµçÆ½
+		GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);//ï¿½ï¿½W5500ï¿½ï¿½SCSÎªï¿½Íµï¿½Æ½
 
-		SPI1_Send_Short(0x00);//Ğ´16Î»µØÖ·
-		SPI1_Send_Byte(VDM|RWB_READ|(s*0x20+0x18));//Ğ´¿ØÖÆ×Ö½Ú,N¸ö×Ö½ÚÊı¾İ³¤¶È,¶ÁÊı¾İ,Ñ¡Ôñ¶Ë¿ÚsµÄ¼Ä´æÆ÷
+		SPI2_Send_Short(0x00);//Ğ´16Î»ï¿½ï¿½Ö·
+		SPI2_Send_Byte(VDM|RWB_READ|(s*0x20+0x18));//Ğ´ï¿½ï¿½ï¿½ï¿½ï¿½Ö½ï¿½,Nï¿½ï¿½ï¿½Ö½ï¿½ï¿½ï¿½ï¿½İ³ï¿½ï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½,Ñ¡ï¿½ï¿½Ë¿ï¿½sï¿½Ä¼Ä´ï¿½ï¿½ï¿½
 		j=SPI_I2S_ReceiveData(SPI_SEL);
 
-		for(;i<rx_size;i++)//Ñ­»·¶ÁÈ¡ºórx_size-offset¸ö×Ö½ÚÊı¾İ
+		for(;i<rx_size;i++)//Ñ­ï¿½ï¿½ï¿½ï¿½È¡ï¿½ï¿½rx_size-offsetï¿½ï¿½ï¿½Ö½ï¿½ï¿½ï¿½ï¿½ï¿½
 		{
-			SPI1_Send_Byte(0x00);//·¢ËÍÒ»¸öÑÆÊı¾İ
-			j=SPI_I2S_ReceiveData(SPI_SEL);//¶ÁÈ¡1¸ö×Ö½ÚÊı¾İ
-			*dat_ptr=j;//½«¶ÁÈ¡µ½µÄÊı¾İ±£´æµ½Êı¾İ±£´æ»º³åÇø
-			dat_ptr++;//Êı¾İ±£´æ»º³åÇøÖ¸ÕëµØÖ·×ÔÔö1
+			SPI2_Send_Byte(0x00);//ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+			j=SPI_I2S_ReceiveData(SPI_SEL);//ï¿½ï¿½È¡1ï¿½ï¿½ï¿½Ö½ï¿½ï¿½ï¿½ï¿½ï¿½
+			*dat_ptr=j;//ï¿½ï¿½ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½İ±ï¿½ï¿½æµ½ï¿½ï¿½ï¿½İ±ï¿½ï¿½æ»ºï¿½ï¿½ï¿½ï¿½
+			dat_ptr++;//ï¿½ï¿½ï¿½İ±ï¿½ï¿½æ»ºï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½Ö·ï¿½ï¿½ï¿½ï¿½1
 		}
 	}
-	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin); //ÖÃW5500µÄSCSÎª¸ßµçÆ½
+	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin); //ï¿½ï¿½W5500ï¿½ï¿½SCSÎªï¿½ßµï¿½Æ½
 
-	offset1+=rx_size;//¸üĞÂÊµ¼ÊÎïÀíµØÖ·,¼´ÏÂ´Î¶ÁÈ¡½ÓÊÕµ½µÄÊı¾İµÄÆğÊ¼µØÖ·
+	offset1+=rx_size;//ï¿½ï¿½ï¿½ï¿½Êµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö·,ï¿½ï¿½ï¿½Â´Î¶ï¿½È¡ï¿½ï¿½ï¿½Õµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½İµï¿½ï¿½ï¿½Ê¼ï¿½ï¿½Ö·
 	Write_W5500_SOCK_2Byte(s, Sn_RX_RD, offset1);
-	Write_W5500_SOCK_1Byte(s, Sn_CR, RECV);//·¢ËÍÆô¶¯½ÓÊÕÃüÁî
-	return rx_size;//·µ»Ø½ÓÊÕµ½Êı¾İµÄ³¤¶È
+	Write_W5500_SOCK_1Byte(s, Sn_CR, RECV);//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	return rx_size;//ï¿½ï¿½ï¿½Ø½ï¿½ï¿½Õµï¿½ï¿½ï¿½ï¿½İµÄ³ï¿½ï¿½ï¿½
 }
 
 
