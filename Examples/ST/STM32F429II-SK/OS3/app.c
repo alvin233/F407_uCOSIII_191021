@@ -212,19 +212,19 @@ static  void  AppTaskCreate (void)
                  (OS_OPT       )(OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR | OS_OPT_TASK_SAVE_FP),
                  (OS_ERR      *)&os_err);
 								 
-			OSTaskCreate((OS_TCB  *)&App_TaskW5500TCB,
-							 (CPU_CHAR    *)"W5500",
-							 (OS_TASK_PTR  ) App_TaskW5500, 
-							 (void        *) 0,
-							 (OS_PRIO      ) APP_CFG_TASK_W5500_PRIO,
-							 (CPU_STK     *)&App_TaskW5500Stk[0],
-							 (CPU_STK_SIZE ) App_TaskEq0FpStk[APP_CFG_TASK_W5500_STK_SIZE / 10u],
-							 (CPU_STK_SIZE ) APP_CFG_TASK_W5500_STK_SIZE,
-							 (OS_MSG_QTY   ) 0u,
-							 (OS_TICK      ) 0u,
-							 (void        *) 0,
-							 (OS_OPT       )(OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR | OS_OPT_TASK_SAVE_FP),
-							 (OS_ERR      *)&os_err);						 
+		OSTaskCreate((OS_TCB  *)&App_TaskW5500TCB,
+						 (CPU_CHAR    *)"W5500",
+						 (OS_TASK_PTR  ) App_TaskW5500, 
+						 (void        *) 0,
+						 (OS_PRIO      ) APP_CFG_TASK_W5500_PRIO,
+						 (CPU_STK     *)&App_TaskW5500Stk[0],
+						 (CPU_STK_SIZE ) App_TaskEq0FpStk[APP_CFG_TASK_W5500_STK_SIZE / 10u],
+						 (CPU_STK_SIZE ) APP_CFG_TASK_W5500_STK_SIZE,
+						 (OS_MSG_QTY   ) 0u,
+						 (OS_TICK      ) 0u,
+						 (void        *) 0,
+						 (OS_OPT       )(OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR | OS_OPT_TASK_SAVE_FP),
+						 (OS_ERR      *)&os_err);						 
 }
 
 
@@ -268,6 +268,7 @@ static  void  AppObjCreate (void)
 void  App_TaskEq0Fp (void  *p_arg)
 {
   OS_ERR  err;
+#if 0
   /* SPI configuration */
   SPI_Configuration();	
   /* GPIO Init */
@@ -307,13 +308,62 @@ void  App_TaskEq0Fp (void  *p_arg)
   /* output your data by terminal */
   //APP_TRACE_INFO(("Eq0 Task Running ....\n"));     
   }
+#endif 
+  while (DEF_TRUE) {
+	  OSTimeDlyHMSM(0u, 0u, 2u, 10u,
+  OS_OPT_TIME_HMSM_STRICT,
+  &err);
 }
+}
+/*
+*********************************************************************************************************
+*                                             App_TaskW5500()
+*
+* Description : This task init W5500, and connect send message.
+*               
+*
+* Argument(s) : p_arg   is the argument passed to 'App_TaskEq0Fp' by 'OSTaskCreate()'.
+*
+* Return(s)   : none.
+*
+* Note(s)     : none.
+*********************************************************************************************************
+*/
 void  App_TaskW5500 (void  *p_arg)
 {
   OS_ERR  err;
-
+/* SPI configuration */
+  SPI_Configuration();	
+  /* GPIO Init */
+  W5500_GPIO_Configuration();
+  /* Setting Net Parameter */
+  Load_Net_Parameters();
+  /* Reset */
+  W5500_Hardware_Reset();
+  W5500_Initialization();	
   while (DEF_TRUE) {
+  W5500_Socket_Set();
   
+  if(W5500_Interrupt)	
+  {
+    /* Interrupt happened */
+    W5500_Interrupt_Process();
+  }
+  if((S0_Data & S_RECEIVE) == S_RECEIVE)
+  {
+    /* socket0 received data */
+    S0_Data&=~S_RECEIVE;
+    /* receive data and re-send it */
+    Process_Socket_Data(0);
+  }
+  /* send every 500ms */
+  if(S0_State == (S_INIT|S_CONN))
+  {
+    S0_Data&=~S_TRANSMITOK;
+    memcpy(Tx_Buffer, "\r\nWelcome To YiXinElec!\r\n", 23);	
+    /* socket 0 send data, size 23 byte */
+    Write_SOCK_Data_Buffer(0, Tx_Buffer, 23);
+  }			
   /* do something here */      
   OSTimeDlyHMSM(0u, 0u, 0u, 10u,
   OS_OPT_TIME_HMSM_STRICT,
