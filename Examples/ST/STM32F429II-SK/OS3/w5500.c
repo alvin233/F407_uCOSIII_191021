@@ -590,219 +590,250 @@ void Socket_Init(SOCKET s)
 	}
 }
 /*******************************************************************************
-* ������  : Write_W5500_SOCK_2Byte
-* ����    : ͨ��SPI1��ָ���˿ڼĴ���д2���ֽ�����
-* ����    : s:�˿ں�,reg:16λ�Ĵ�����ַ,dat:16λ��д�������(2���ֽ�)
-* ���    : ��
-* ����ֵ  : ��
-* ˵��    : ��
+ * Funtion : Write_W5500_SOCK_2Byte
+ * Description : write 2 byte to the selected registor of W5500;
+ * Input : s, socket selection; reg, registor address; dat, data, 2 bytes;  
+ * Output : None
+ * Return : None
+ * Others : None
 *******************************************************************************/
 void Write_W5500_SOCK_2Byte(SOCKET s, unsigned short reg, unsigned short dat)
 {
-	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);//��W5500��SCSΪ�͵�ƽ
-			
-	SPI2_Send_Short(reg);//ͨ��SPI1д16λ�Ĵ�����ַ
-	SPI2_Send_Byte(FDM2|RWB_WRITE|(s*0x20+0x08));//ͨ��SPI1д�����ֽ�,2���ֽ����ݳ���,д����,ѡ��˿�s�ļĴ���
-	SPI2_Send_Short(dat);//д16λ����
-
-	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin); //��W5500��SCSΪ�ߵ�ƽ
+	/* pull SCS down, enable W5500 */
+	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);
+	/* 16 bit reg address */
+	SPI2_Send_Short(reg);
+	/* control word */
+	SPI2_Send_Byte(FDM2|RWB_WRITE|(s*0x20+0x08));
+	/* data, 2 byte */
+	SPI2_Send_Short(dat);
+	/* pull SCS up, disable W5500 */
+	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin); 
 }
 /*******************************************************************************
-* ������  : W5500_Hardware_Reset
-* ����    : Ӳ����λW5500
-* ����    : ��
-* ���    : ��
-* ����ֵ  : ��
-* ˵��    : W5500�ĸ�λ���ű��ֵ͵�ƽ����500us����,������ΧW5500
+ * Funtion : W5500_Hardware_Reset
+ * Description : reset W5500
+ * Input : None
+ * Output : None
+ * Return : None
+ * Others : None
 *******************************************************************************/
 void W5500_Hardware_Reset(void)
 {
 	OS_ERR  err;
-	GPIO_ResetBits(W5500_RST_PORT, W5500_RST_Pin);//��λ��������
-	//Delay(50);
+	/* pull down reset IO pin */
+	GPIO_ResetBits(W5500_RST_PORT, W5500_RST_Pin);
+	/* delay 50ms */
 	OSTimeDlyHMSM(0u, 0u, 0u, 50u,
 					OS_OPT_TIME_HMSM_STRICT,
 					&err);
-	GPIO_SetBits(W5500_RST_PORT, W5500_RST_Pin);//��λ��������
-	//Delay(200);
+	/* pull up reset IO pin */
+	GPIO_SetBits(W5500_RST_PORT, W5500_RST_Pin);
+	/* delay 200ms */
 	OSTimeDlyHMSM(0u, 0u, 0u, 200u,
 					OS_OPT_TIME_HMSM_STRICT,
 					&err);
-	while((Read_W5500_1Byte(PHYCFGR)&LINK)==0);//�ȴ���̫���������
+	/* wait for link connection, had better re-write this function */
+	while((Read_W5500_1Byte(PHYCFGR)&LINK)==0);
 }
 /*******************************************************************************
-* ������  : Read_W5500_1Byte
-* ����    : ��W5500ָ����ַ�Ĵ�����1���ֽ�����
-* ����    : reg:16λ�Ĵ�����ַ
-* ���    : ��
-* ����ֵ  : ��ȡ���Ĵ�����1���ֽ�����
-* ˵��    : ��
+ * Funtion : Read_W5500_1Byte
+ * Description : get data from selected registor of W5500
+ * Input : reg, registor address;
+ * Output : None
+ * Return : None
+ * Others : None
 *******************************************************************************/
 unsigned char Read_W5500_1Byte(unsigned short reg)
 {
-	static unsigned char i;
-
-	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);//��W5500��SCSΪ�͵�ƽ
-			
-	SPI2_Send_Short(reg);//ͨ��SPI1д16λ�Ĵ�����ַ
-	SPI2_Send_Byte(FDM1|RWB_READ|COMMON_R);//ͨ��SPI1д�����ֽ�,1���ֽ����ݳ���,������,ѡ��ͨ�üĴ���
-
-	i=SPI_I2S_ReceiveData(SPI_SEL);
-	SPI2_Send_Byte(0x00);//����һ��������
-	i=SPI_I2S_ReceiveData(SPI_SEL);//��ȡ1���ֽ�����
-
-	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin);//��W5500��SCSΪ�ߵ�ƽ
-	return i;//���ض�ȡ���ļĴ�������
+	unsigned char recv_data;
+	/* pull down SCS pin, enable W5500 */
+	GPIO_ResetBits(W5500_SCS_PORT, W5500_SCS_Pin);
+	/* select registor */			
+	SPI2_Send_Short(reg);
+	/* control byte */
+	SPI2_Send_Byte(FDM1|RWB_READ|COMMON_R);
+	recv_data = SPI_I2S_ReceiveData(SPI_SEL);
+	/* send one test data */
+	SPI2_Send_Byte(0x00);
+	recv_data = SPI_I2S_ReceiveData(SPI_SEL);
+	/* disable W5500 */
+	GPIO_SetBits(W5500_SCS_PORT, W5500_SCS_Pin);
+	return (recv_data);
 }
 /*******************************************************************************
-* ������  : W5500_Socket_Set
-* ����    : W5500�˿ڳ�ʼ������
-* ����    : ��
-* ���    : ��
-* ����ֵ  : ��
-* ˵��    : �ֱ�����4���˿�,���ݶ˿ڹ���ģʽ,���˿�����TCP��������TCP�ͻ��˻�UDPģʽ.
-*			�Ӷ˿�״̬�ֽ�Socket_State�����ж϶˿ڵĹ������
+ * Funtion : W5500_Socket_Set
+ * Description : socket configuration
+ * Input : None
+ * Output : None
+ * Return : None
+ * Others : None
 *******************************************************************************/
 void W5500_Socket_Set(void)
 {
-	if(S0_State==0)//�˿�0��ʼ������
+	/* socket 0 configuration */
+	if(S0_State==0)
 	{
-		if(S0_Mode==TCP_SERVER)//TCP������ģʽ 
+		if(S0_Mode==TCP_SERVER) 
 		{
+			/* TCP server mode */
 			if(Socket_Listen(0)==TRUE)
+			{
 				S0_State=S_INIT;
+			}				
 			else
+			{
 				S0_State=0;
+			}				
 		}
-		else if(S0_Mode==TCP_CLIENT)//TCP�ͻ���ģʽ 
+		else 
+		if(S0_Mode==TCP_CLIENT) 
 		{
+			/* TCP client mode */
 			if(Socket_Connect(0)==TRUE)
+			{
 				S0_State=S_INIT;
+			}				
 			else
+			{
 				S0_State=0;
+			}				
 		}
-		else//UDPģʽ 
+		else 
 		{
-			if(Socket_UDP(0)==TRUE)
-				S0_State=S_INIT|S_CONN;
+			/* UDP mode */
+			if(Socket_UDP(0) == TRUE)
+			{
+				S0_State = S_INIT|S_CONN;
+			}				
 			else
-				S0_State=0;
+			{
+				S0_State = 0;
+			}	
 		}
 	}
 }
 /*******************************************************************************
-* ������  : Socket_Connect
-* ����    : ����ָ��Socket(0~7)Ϊ�ͻ�����Զ�̷���������
-* ����    : s:���趨�Ķ˿�
-* ���    : ��
-* ����ֵ  : �ɹ�����TRUE(0xFF),ʧ�ܷ���FALSE(0x00)
-* ˵��    : ������Socket�����ڿͻ���ģʽʱ,���øó���,��Զ�̷�������������
-*			����������Ӻ���ֳ�ʱ�жϣ��������������ʧ��,��Ҫ���µ��øó�������
-*			�ó���ÿ����һ��,�������������һ������
+ * Funtion : Socket_Connect
+ * Description : make connection of selected socket;
+ * Input : s, socket port to establish connection;
+ * Output : None
+ * Return : None
+ * Others : None
 *******************************************************************************/
 unsigned char Socket_Connect(SOCKET s)
 {
 	OS_ERR  err;
-	Write_W5500_SOCK_1Byte(s,Sn_MR,MR_TCP);//����socketΪTCPģʽ
-	Write_W5500_SOCK_1Byte(s,Sn_CR,OPEN);//��Socket
-	//Delay(5);//��ʱ5ms
+	/* set socket work as TCP mode */
+	Write_W5500_SOCK_1Byte(s,Sn_MR,MR_TCP);
+	/* open socket port s */
+	Write_W5500_SOCK_1Byte(s,Sn_CR,OPEN);
+	/* delay 8ms */
 	OSTimeDlyHMSM(0u, 0u, 0u, 8u,
 					OS_OPT_TIME_HMSM_STRICT,
 					&err);
-	if(Read_W5500_SOCK_1Byte(s,Sn_SR)!=SOCK_INIT)//���socket��ʧ��
+	if(Read_W5500_SOCK_1Byte(s,Sn_SR)!=SOCK_INIT)
 	{
-		Write_W5500_SOCK_1Byte(s,Sn_CR,CLOSE);//�򿪲��ɹ�,�ر�Socket
-		return FALSE;//����FALSE(0x00)
+		/* open socket failed, close socket */
+		Write_W5500_SOCK_1Byte(s,Sn_CR,CLOSE);
+		return FALSE;
 	}
-	Write_W5500_SOCK_1Byte(s,Sn_CR,CONNECT);//����SocketΪConnectģʽ
-	return TRUE;//����TRUE,���óɹ�
+	/* establish socket connection state */
+	Write_W5500_SOCK_1Byte(s,Sn_CR,CONNECT);
+	return TRUE;
 }
 /*******************************************************************************
-* ������  : Socket_Listen
-* ����    : ����ָ��Socket(0~7)��Ϊ�������ȴ�Զ������������
-* ����    : s:���趨�Ķ˿�
-* ���    : ��
-* ����ֵ  : �ɹ�����TRUE(0xFF),ʧ�ܷ���FALSE(0x00)
-* ˵��    : ������Socket�����ڷ�����ģʽʱ,���øó���,�ȵ�Զ������������
-*			�ó���ֻ����һ��,��ʹW5500����Ϊ������ģʽ
+ * Funtion : Socket_Listen
+ * Description : set the socket port as server waiting for connection
+ * Input : s, socket port to wait connection;
+ * Output : None
+ * Return : TRUE, sucesss; FALSE, fail;
+ * Others : when socket work as server mode, 
+ * just call the function once to put W5500 working as server mdoe;
 *******************************************************************************/
 unsigned char Socket_Listen(SOCKET s)
 {
-	  OS_ERR  err;
-	Write_W5500_SOCK_1Byte(s,Sn_MR,MR_TCP);//����socketΪTCPģʽ 
-	Write_W5500_SOCK_1Byte(s,Sn_CR,OPEN);//��Socket	
-	//Delay(5);//��ʱ5ms
+	OS_ERR  err;
+	/* set socket work as TCP mode */
+	Write_W5500_SOCK_1Byte(s,Sn_MR,MR_TCP); 
+	/* open socket */
+	Write_W5500_SOCK_1Byte(s,Sn_CR,OPEN);	
+	/* delay 5ms */
 	OSTimeDlyHMSM(0u, 0u, 0u, 5u,
 					OS_OPT_TIME_HMSM_STRICT,
 					&err);
-	if(Read_W5500_SOCK_1Byte(s,Sn_SR)!=SOCK_INIT)//���socket��ʧ��
+	if(Read_W5500_SOCK_1Byte(s,Sn_SR)!=SOCK_INIT)
 	{
-		Write_W5500_SOCK_1Byte(s,Sn_CR,CLOSE);//�򿪲��ɹ�,�ر�Socket
-		return FALSE;//����FALSE(0x00)
+		/* open socket failed, close socket */
+		Write_W5500_SOCK_1Byte(s,Sn_CR,CLOSE);
+		return FALSE;
 	}	
-	Write_W5500_SOCK_1Byte(s,Sn_CR,LISTEN);//����SocketΪ����ģʽ	
-//	Delay(5);//��ʱ5ms
+	/* set socket listen connection */
+	Write_W5500_SOCK_1Byte(s,Sn_CR,LISTEN);	
+	/* delay 5ms */
 	OSTimeDlyHMSM(0u, 0u, 0u, 5u,
 				OS_OPT_TIME_HMSM_STRICT,
 				&err);
-	if(Read_W5500_SOCK_1Byte(s,Sn_SR)!=SOCK_LISTEN)//���socket����ʧ��
+	if(Read_W5500_SOCK_1Byte(s,Sn_SR)!=SOCK_LISTEN)
 	{
-		Write_W5500_SOCK_1Byte(s,Sn_CR,CLOSE);//���ò��ɹ�,�ر�Socket
-		return FALSE;//����FALSE(0x00)
+		/* setting failed, close socket */
+		Write_W5500_SOCK_1Byte(s,Sn_CR,CLOSE);
+		return FALSE;
 	}
-
 	return TRUE;
-
-	//���������Socket�Ĵ򿪺�������������,����Զ�̿ͻ����Ƿ�������������,����Ҫ�ȴ�Socket�жϣ�
-	//���ж�Socket�������Ƿ�ɹ����ο�W5500�����ֲ��Socket�ж�״̬
-	//�ڷ���������ģʽ����Ҫ����Ŀ��IP��Ŀ�Ķ˿ں�
+	/* wait socket interruption to ensure the socket connection */
+	/* when using listen mode, no need seting destnation IP and port number */
 }
 /*******************************************************************************
-* ������  : Socket_UDP
-* ����    : ����ָ��Socket(0~7)ΪUDPģʽ
-* ����    : s:���趨�Ķ˿�
-* ���    : ��
-* ����ֵ  : �ɹ�����TRUE(0xFF),ʧ�ܷ���FALSE(0x00)
-* ˵��    : ���Socket������UDPģʽ,���øó���,��UDPģʽ��,Socketͨ�Ų���Ҫ��������
-*			�ó���ֻ����һ�Σ���ʹW5500����ΪUDPģʽ
+ * Funtion : Socket_UDP
+ * Description : set the selected socket port UDP mode
+ * Input : s, socket port to wait connection;
+ * Output : None
+ * Return : TRUE, sucesss; FALSE, fail;
+ * Others : 
 *******************************************************************************/
 unsigned char Socket_UDP(SOCKET s)
 {
 	OS_ERR  err;
-	Write_W5500_SOCK_1Byte(s,Sn_MR,MR_UDP);//����SocketΪUDPģʽ*/
-	Write_W5500_SOCK_1Byte(s,Sn_CR,OPEN);//��Socket*/
-	//Delay(5);//��ʱ5ms
+	/* set W5500 working as UDP mode */
+	Write_W5500_SOCK_1Byte(s,Sn_MR,MR_UDP);
+	/* open socket */
+	Write_W5500_SOCK_1Byte(s,Sn_CR,OPEN);
 	OSTimeDlyHMSM(0u, 0u, 0u, 5u,
 					OS_OPT_TIME_HMSM_STRICT,
 					&err);
-	if(Read_W5500_SOCK_1Byte(s,Sn_SR)!=SOCK_UDP)//���Socket��ʧ��
+	if(Read_W5500_SOCK_1Byte(s,Sn_SR)!=SOCK_UDP)
 	{
-		Write_W5500_SOCK_1Byte(s,Sn_CR,CLOSE);//�򿪲��ɹ�,�ر�Socket
-		return FALSE;//����FALSE(0x00)
+		/* socket open failed, close socket port */
+		Write_W5500_SOCK_1Byte(s,Sn_CR,CLOSE);
+		return FALSE;
 	}
 	else
+	{
 		return TRUE;
-	//���������Socket�Ĵ򿪺�UDPģʽ����,������ģʽ��������Ҫ��Զ��������������
-	//��ΪSocket����Ҫ��������,�����ڷ�������ǰ����������Ŀ������IP��Ŀ��Socket�Ķ˿ں�
-	//���Ŀ������IP��Ŀ��Socket�Ķ˿ں��ǹ̶���,�����й�����û�иı�,��ôҲ��������������
+	}
+	/* in UDP mode, no need of connection before send data */
+	/* in UDP mode, set IP addr and socket port before send data is ok */
+	/* you can set you desitnation IP and socket port here if they are fixed */
 }
-
 /*******************************************************************************
-* ������  : W5500_Interrupt_Process
-* ����    : W5500�жϴ���������
-* ����    : ��
-* ���    : ��
-* ����ֵ  : ��
-* ˵��    : ��
+ * Funtion : W5500_Interrupt_Process
+ * Description : ;
+ * Input : None
+ * Output : None
+ * Return : None
+ * Others : None
 *******************************************************************************/
 void W5500_Interrupt_Process(void)
 {
 	unsigned char i,j;
-
 IntDispose:
-	W5500_Interrupt=0;//�����жϱ�־
-	i = Read_W5500_1Byte(IR);//��ȡ�жϱ�־�Ĵ���
-	Write_W5500_1Byte(IR, (i&0xf0));//��д����жϱ�־
+	/* clear interruption flag*/
+	W5500_Interrupt=0;
+	/* get intertuption registor */
+	i = Read_W5500_1Byte(IR);
+	/* clear interruption registor */
+	Write_W5500_1Byte(IR, (i&0xf0));
 
 	if((i & CONFLICT) == CONFLICT)//IP��ַ��ͻ�쳣����
 	{
