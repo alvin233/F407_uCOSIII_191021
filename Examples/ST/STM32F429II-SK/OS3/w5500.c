@@ -834,17 +834,14 @@ IntDispose:
 	i = Read_W5500_1Byte(IR);
 	/* clear interruption registor */
 	Write_W5500_1Byte(IR, (i&0xf0));
-
 	if((i & CONFLICT) == CONFLICT)//IP��ַ��ͻ�쳣����
 	{
 		 //�Լ����Ӵ���
 	}
-
 	if((i & UNREACH) == UNREACH)//UDPģʽ�µ�ַ�޷������쳣����
 	{
 		//�Լ����Ӵ���
 	}
-
 	i=Read_W5500_1Byte(SIR);//��ȡ�˿��жϱ�־�Ĵ���	
 	if((i & S0_INT) == S0_INT)//Socket0�¼����� 
 	{
@@ -874,7 +871,6 @@ IntDispose:
 			S0_State=0;//��������״̬0x00,�˿�����ʧ��
 		}
 	}
-
 	if(Read_W5500_1Byte(SIR) != 0) 
 		goto IntDispose;
 }

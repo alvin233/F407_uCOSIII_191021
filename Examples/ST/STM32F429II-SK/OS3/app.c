@@ -86,6 +86,13 @@ static  void  App_TaskW5500         (void  *p_arg);
 *********************************************************************************************************
 */
 
+	double tmp_1028 = 0;
+	double tmp_1028_1357 = 0;
+        double data_out_V_V = 0;
+        double data_out_Cal_I = 0;
+        double data_out_Cal_V = 0;
+	static double data=0;
+	
 int main(void)
 {
     OS_ERR  err;
@@ -263,7 +270,13 @@ static  void  AppObjCreate (void)
 
 void  App_TaskEq0Fp (void  *p_arg)
 {
+
   OS_ERR  err;
+	#if 0
+	double tmp_1028 = 0;
+	double tmp_1028_1357 = 0;
+	static double data=0;
+	#endif
 #if 0
   /* SPI configuration */
   SPI_Configuration();	
@@ -305,10 +318,31 @@ void  App_TaskEq0Fp (void  *p_arg)
   //APP_TRACE_INFO(("Eq0 Task Running ....\n"));     
   }
 #endif 
+  Debug_USART_Config();
+  Rheostat_Init();
   while (DEF_TRUE) {
       OSTimeDlyHMSM(0u, 0u, 2u, 10u,
         OS_OPT_TIME_HMSM_STRICT,
-        &err);
+        &err);	
+		average();
+			tmp_1028 = (float)IVOUT[0]*times_1e1_vol_per;
+			tmp_1028 = tmp_1028 /10;
+			tmp_1028 = tmp_1028/4096;
+	  // ADC_ConvertedValueLocal[0] =(float)IVOUT[0]*times_1000000_vol_per;
+		printf("\r\n V_I = %f V \r\n",tmp_1028);				
+		data = (tmp_1028-2.588)*10;// 15*I_p - 2.33*15
+                data_out_Cal_I = data;
+		printf("\r\n Cal_I value = %f A \r\n",data);
+		#if 1
+		tmp_1028_1357 =(float) IVOUT[1]*times_1e1_vol_per ;
+			tmp_1028_1357 = tmp_1028_1357/10;
+			data_out_V_V = tmp_1028_1357/4096;
+                        data_out_Cal_V = data_out_V_V*16;
+		printf("\r\n V_V = %f V \r\n",data_out_V_V);
+			
+		tmp_1028_1357=tmp_1028_1357*16;
+		printf("\r\n Cal_V = %f V \r\n",tmp_1028_1357);
+		#endif
   }
 }
 /*
@@ -328,6 +362,9 @@ void  App_TaskEq0Fp (void  *p_arg)
 void  App_TaskW5500 (void  *p_arg)
 {
   OS_ERR  err;
+  char str[160];
+  char str_1[160];
+	#if 1
 /* SPI configuration */
   SPI_Configuration();	
   /* GPIO Init */
@@ -337,6 +374,7 @@ void  App_TaskW5500 (void  *p_arg)
   /* Reset */
   W5500_Hardware_Reset();
   W5500_Initialization();	
+	
   while (DEF_TRUE) {
   W5500_Socket_Set();
   if(W5500_Interrupt)	
@@ -355,16 +393,41 @@ void  App_TaskW5500 (void  *p_arg)
   if(S0_State == (S_INIT|S_CONN))
   {
     S0_Data&=~S_TRANSMITOK;
-    memcpy(Tx_Buffer, "\r\nWelcome To YiXinElec!\r\n", 23);	
+#if 0
+		printf("\r\n Cal_I value = %f A \r\n",data);
+
+
+		printf("\r\n V_V = %f V \r\n",tmp_1028_1357);
+			
+		tmp_1028_1357=tmp_1028_1357*16;
+		printf("\r\n Cal_V = %f V \r\n",tmp_1028_1357);
+#endif
+    memcpy(Tx_Buffer, "\r\nWelcome To CQU!\r\n", 19);	
     /* socket 0 send data, size 23 byte */
-    Write_SOCK_Data_Buffer(0, Tx_Buffer, 23);
+    Write_SOCK_Data_Buffer(0, Tx_Buffer, (15 + 4));
+    /* output current */
+     sprintf(str, "\r\n V_I = %f V \r\n V_V = %f V \r\n Cal_I = %f A \r\n Cal_V = %f V \r\n ", tmp_1028, data_out_V_V, data_out_Cal_I, data_out_Cal_V);
+     memcpy(Tx_Buffer, str, 160);        
+     Write_SOCK_Data_Buffer(0, Tx_Buffer, 160);
+/*
+     sprintf(str_1, "\r\n V_V = %f V \r\n", data_out_V_V);
+     memcpy(Tx_Buffer, str_1, 80);
+     Write_SOCK_Data_Buffer(0, Tx_Buffer, 80);
+*/
   }			
+  /* do something here */      
+  OSTimeDlyHMSM(0u, 0u, 1u, 10u,
+  OS_OPT_TIME_HMSM_STRICT,
+  &err);
+  /* output your data by terminal */ 
+  }
+	#else
+	while (DEF_TRUE) {
   /* do something here */      
   OSTimeDlyHMSM(0u, 0u, 0u, 10u,
   OS_OPT_TIME_HMSM_STRICT,
   &err);
-  /* output your data by terminal */
-  //APP_TRACE_INFO(("Eq0 Task Running ....\n"));     
   }
+	#endif
 }
 
