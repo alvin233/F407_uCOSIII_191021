@@ -86,13 +86,12 @@ static  void  App_TaskW5500         (void  *p_arg);
 *********************************************************************************************************
 */
 
-	double tmp_1028 = 0;
-	double tmp_1028_1357 = 0;
-        double data_out_V_V = 0;
-        double data_out_Cal_I = 0;
-        double data_out_Cal_V = 0;
-	static double data=0;
-	
+double tmp_1028 = 0;
+double tmp_1028_1357 = 0;
+double data_out_V_V = 0;
+double data_out_Cal_I = 0;
+double data_out_Cal_V = 0;
+static double data=0;
 int main(void)
 {
     OS_ERR  err;
@@ -225,7 +224,7 @@ static  void  AppTaskCreate (void)
                 (void        *) 0,
                 (OS_PRIO      ) APP_CFG_TASK_W5500_PRIO,
                 (CPU_STK     *)&App_TaskW5500Stk[0],
-                (CPU_STK_SIZE ) App_TaskEq0FpStk[APP_CFG_TASK_W5500_STK_SIZE / 10u],
+                (CPU_STK_SIZE ) App_TaskW5500Stk[APP_CFG_TASK_W5500_STK_SIZE / 10u],
                 (CPU_STK_SIZE ) APP_CFG_TASK_W5500_STK_SIZE,
                 (OS_MSG_QTY   ) 0u,
                 (OS_TICK      ) 0u,
@@ -393,15 +392,6 @@ void  App_TaskW5500 (void  *p_arg)
   if(S0_State == (S_INIT|S_CONN))
   {
     S0_Data&=~S_TRANSMITOK;
-#if 0
-		printf("\r\n Cal_I value = %f A \r\n",data);
-
-
-		printf("\r\n V_V = %f V \r\n",tmp_1028_1357);
-			
-		tmp_1028_1357=tmp_1028_1357*16;
-		printf("\r\n Cal_V = %f V \r\n",tmp_1028_1357);
-#endif
     memcpy(Tx_Buffer, "\r\nWelcome To CQU!\r\n", 19);	
     /* socket 0 send data, size 23 byte */
     Write_SOCK_Data_Buffer(0, Tx_Buffer, (15 + 4));
