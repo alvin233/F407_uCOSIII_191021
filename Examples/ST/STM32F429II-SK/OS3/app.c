@@ -43,7 +43,7 @@
 */
 
 #define  APP_TASK_EQ_0_ITERATION_NBR              16u
-
+#define   uart_output 1
 
 /*
 *********************************************************************************************************
@@ -61,6 +61,11 @@ static  CPU_STK      App_TaskEq0FpStk[APP_CFG_TASK_EQ_STK_SIZE];
 static  OS_TCB       App_TaskW5500TCB;
 static  CPU_STK      App_TaskW5500Stk[APP_CFG_TASK_W5500_STK_SIZE];
 
+static  OS_TCB       App_TaskPWMTCB;
+static  CPU_STK      App_TaskPWMStk[APP_CFG_TASK_PWM_STK_SIZE];
+
+
+
 /*
 *********************************************************************************************************
 *                                         FUNCTION PROTOTYPES
@@ -72,7 +77,10 @@ static  void  AppTaskCreate         (void);
 static  void  AppObjCreate          (void);
 
 static  void  App_TaskEq0Fp         (void  *p_arg);             /* Floating Point Equation 0 task.                      */
+/* Init W5500, make connection and send data to PC */
 static  void  App_TaskW5500         (void  *p_arg); 
+/* PWM output for the control of Inverter*/
+static  void  App_TaskPWM           (void  *p_arg);
 /*
 *********************************************************************************************************
 *                                                main()
@@ -202,8 +210,7 @@ static  void  AppTaskStart (void *p_arg)
 static  void  AppTaskCreate (void)
 {
     OS_ERR  os_err;
-    
-                                                                /* ------------- CREATE FLOATING POINT TASK ----------- */
+    /* ------------- CREATE FLOATING POINT TASK ----------- */
     OSTaskCreate((OS_TCB      *)&App_TaskEq0FpTCB,
                  (CPU_CHAR    *)"FP  Equation 1",
                  (OS_TASK_PTR  ) App_TaskEq0Fp, 
@@ -230,7 +237,21 @@ static  void  AppTaskCreate (void)
                 (OS_TICK      ) 0u,
                 (void        *) 0,
                 (OS_OPT       )(OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR | OS_OPT_TASK_SAVE_FP),
-                (OS_ERR      *)&os_err);						 
+                (OS_ERR      *)&os_err);	
+
+		OSTaskCreate((OS_TCB      *)&App_TaskPWMTCB,
+                (CPU_CHAR     *)"PWM",
+                (OS_TASK_PTR   ) App_TaskPWM, 
+                (void        *) 0,
+                (OS_PRIO      ) APP_CFG_TASK_PWM_PRIO,
+                (CPU_STK     *)&App_TaskPWMStk[0],
+                (CPU_STK_SIZE ) App_TaskPWMStk[APP_CFG_TASK_PWM_STK_SIZE / 10u],
+                (CPU_STK_SIZE ) APP_CFG_TASK_PWM_STK_SIZE,
+                (OS_MSG_QTY   ) 0u,
+                (OS_TICK      ) 0u,
+                (void        *) 0,
+                (OS_OPT       )(OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR | OS_OPT_TASK_SAVE_FP),
+                (OS_ERR      *)&os_err);	
 }
 /*
 *********************************************************************************************************
@@ -269,78 +290,43 @@ static  void  AppObjCreate (void)
 
 void  App_TaskEq0Fp (void  *p_arg)
 {
-
   OS_ERR  err;
 	#if 0
 	double tmp_1028 = 0;
 	double tmp_1028_1357 = 0;
 	static double data=0;
 	#endif
-#if 0
-  /* SPI configuration */
-  SPI_Configuration();	
-  /* GPIO Init */
-  W5500_GPIO_Configuration();
-  /* Setting Net Parameter */
-  Load_Net_Parameters();
-  /* Reset */
-  W5500_Hardware_Reset();
-  W5500_Initialization();	
-  while (DEF_TRUE) {
-  W5500_Socket_Set();
-  
-  if(W5500_Interrupt)	
-  {
-    /* Interrupt happened */
-    W5500_Interrupt_Process();
-  }
-  if((S0_Data & S_RECEIVE) == S_RECEIVE)
-  {
-    /* socket0 received data */
-    S0_Data&=~S_RECEIVE;
-    /* receive data and re-send it */
-    Process_Socket_Data(0);
-  }
-  /* send every 500ms */
-  if(S0_State == (S_INIT|S_CONN))
-  {
-    S0_Data&=~S_TRANSMITOK;
-    memcpy(Tx_Buffer, "\r\nWelcome To YiXinElec!\r\n", 23);	
-    /* socket 0 send data, size 23 byte */
-    Write_SOCK_Data_Buffer(0, Tx_Buffer, 23);
-  }			
-  /* do something here */      
-  OSTimeDlyHMSM(0u, 0u, 0u, 10u,
-  OS_OPT_TIME_HMSM_STRICT,
-  &err);
-  /* output your data by terminal */
-  //APP_TRACE_INFO(("Eq0 Task Running ....\n"));     
-  }
-#endif 
   Debug_USART_Config();
   Rheostat_Init();
   while (DEF_TRUE) {
       OSTimeDlyHMSM(0u, 0u, 2u, 10u,
         OS_OPT_TIME_HMSM_STRICT,
         &err);	
-		average();
-			tmp_1028 = (float)IVOUT[0]*times_1e1_vol_per;
-			tmp_1028 = tmp_1028 /10;
-			tmp_1028 = tmp_1028/4096;
-	  // ADC_ConvertedValueLocal[0] =(float)IVOUT[0]*times_1000000_vol_per;
+        /* average ADC data */
+    average();
+    tmp_1028 = (float)IVOUT[0]*times_1e1_vol_per;
+    tmp_1028 = tmp_1028 /10;
+    tmp_1028 = tmp_1028/4096;
+    #if uart_output
 		printf("\r\n V_I = %f V \r\n",tmp_1028);				
-		data = (tmp_1028-2.588)*10;// 15*I_p - 2.33*15
-                data_out_Cal_I = data;
+    #endif
+    /* calculate current data */
+		data = (tmp_1028-2.588)*10;
+    data_out_Cal_I = data;
+    #if uart_output
 		printf("\r\n Cal_I value = %f A \r\n",data);
+    #endif
 		#if 1
+    /*calculate voltage data */
 		tmp_1028_1357 =(float) IVOUT[1]*times_1e1_vol_per ;
-			tmp_1028_1357 = tmp_1028_1357/10;
-			data_out_V_V = tmp_1028_1357/4096;
-                        data_out_Cal_V = data_out_V_V*16;
+		tmp_1028_1357 = tmp_1028_1357/10;
+		data_out_V_V = tmp_1028_1357/4096;
+    data_out_Cal_V = data_out_V_V * 16;
+    #if uart_output
 		printf("\r\n V_V = %f V \r\n",data_out_V_V);
-			
 		tmp_1028_1357=tmp_1028_1357*16;
 		printf("\r\n Cal_V = %f V \r\n",tmp_1028_1357);
+    #endif 
 		#endif
   }
 }
@@ -362,7 +348,7 @@ void  App_TaskW5500 (void  *p_arg)
 {
   OS_ERR  err;
   char str[160];
-  char str_1[160];
+  //char str_1[160];
 	#if 1
 /* SPI configuration */
   SPI_Configuration();	
@@ -372,8 +358,7 @@ void  App_TaskW5500 (void  *p_arg)
   Load_Net_Parameters();
   /* Reset */
   W5500_Hardware_Reset();
-  W5500_Initialization();	
-	
+  W5500_Initialization();		
   while (DEF_TRUE) {
   W5500_Socket_Set();
   if(W5500_Interrupt)	
@@ -420,4 +405,31 @@ void  App_TaskW5500 (void  *p_arg)
   }
 	#endif
 }
+/*
+*********************************************************************************************************
+*                                             App_TaskPWM()
+*
+* Description : This task init App_TaskPWM.
+*               
+*
+* Argument(s) : p_arg   is the argument passed to 'App_TaskEq0Fp' by 'OSTaskCreate()'.
+*
+* Return(s)   : none.
+*
+* Note(s)     : none.
+*********************************************************************************************************
+*/
+void  App_TaskPWM (void  *p_arg)
+{
+  OS_ERR  err;
+  
+  while (DEF_TRUE) {
+    /* do something here */
+    OSTimeDlyHMSM(0u, 0u, 0u, 10u,
+      OS_OPT_TIME_HMSM_STRICT,
+      &err);
+  }
+  
+}
+
 

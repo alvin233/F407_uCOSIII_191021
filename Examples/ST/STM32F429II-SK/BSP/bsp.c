@@ -497,12 +497,6 @@ void  BSP_LED_Off (CPU_INT08U  led)
 *
 * Argument(s) : led     The ID of the LED to control:
 *
-*                       0    turns ON ALL  LEDs
-*                       1    turns ON user LED1
-*                       2    turns ON user LED2
-*                       3    turns ON user LED3
-*                       4    turns ON user LED4
-*
 * Return(s)   : none.
 *
 * Caller(s)   : Application.
@@ -524,12 +518,6 @@ void  BSP_LED_On (CPU_INT08U led)
 * Description : TOGGLE any or all the LEDs on the board.
 *
 * Argument(s) : led     The ID of the LED to control:
-*
-*                       0    TOGGLE ALL the LEDs
-*                       1    TOGGLE user LED1
-*                       2    TOGGLE user LED2
-*                       3    TOGGLE user LED3
-*                       4    TOGGLE user LED4
 *
 * Return(s)   : none.
 *
