@@ -36,15 +36,17 @@
 
 #include  <includes.h>
 
+
 /*
 *********************************************************************************************************
 *                                            LOCAL DEFINES
 *********************************************************************************************************
 */
 
-#define  APP_TASK_EQ_0_ITERATION_NBR              16u
-#define   uart_output 1
-
+#define 	APP_TASK_EQ_0_ITERATION_NBR              16u
+#define 	uart_output 0
+#define 	W5500 0
+#define 	PWM 1
 /*
 *********************************************************************************************************
 *                                       LOCAL GLOBAL VARIABLES
@@ -176,18 +178,21 @@ static  void  AppTaskStart (void *p_arg)
     AppObjCreate();                                             /* Create Applicaiton kernel objects                    */
 
     APP_TRACE_DBG(("Creating Application Tasks\n\r"));
-    AppTaskCreate();                                            /* Create Application tasks                             */
+    AppTaskCreate();        
+		/* Create Application tasks                             */
 
 
     while (DEF_TRUE) {                                          /* Task body, always written as an infinite loop.       */
 
-        OSTimeDlyHMSM(0u, 0u, 2u, 100u,
+       
+			
+        OSTimeDlyHMSM(0u, 0u, 0u, 100u,
                       OS_OPT_TIME_HMSM_STRICT,
                       &err);
         /* do something here */
+	}
 
 
-    }
 }
 
 
@@ -347,9 +352,9 @@ void  App_TaskEq0Fp (void  *p_arg)
 void  App_TaskW5500 (void  *p_arg)
 {
   OS_ERR  err;
-  char str[160];
+	#if W5500
+	  char str[160];
   //char str_1[160];
-	#if 1
 /* SPI configuration */
   SPI_Configuration();	
   /* GPIO Init */
@@ -399,7 +404,7 @@ void  App_TaskW5500 (void  *p_arg)
 	#else
 	while (DEF_TRUE) {
   /* do something here */      
-  OSTimeDlyHMSM(0u, 0u, 0u, 10u,
+  OSTimeDlyHMSM(0u, 0u, 1u, 10u,
   OS_OPT_TIME_HMSM_STRICT,
   &err);
   }
@@ -421,14 +426,32 @@ void  App_TaskW5500 (void  *p_arg)
 */
 void  App_TaskPWM (void  *p_arg)
 {
-  OS_ERR  err;
-  
+	OS_ERR  err;
+	#if PWM
+	TIM1_GPIO_Config();
+	Tim1__Config();      //��ʼ��tim1��tim8
+
   while (DEF_TRUE) {
     /* do something here */
-    OSTimeDlyHMSM(0u, 0u, 0u, 10u,
+
+		TIM_SetCompare1(TIM1,ccr_temp);
+		TIM_SetCompare1(TIM8,ccr_temp);
+		if(ccr_temp<559)
+					ccr_temp+=5;
+		else
+					ccr_temp=560;                    
+    OSTimeDlyHMSM(0u, 0u, 0u, 100u,
       OS_OPT_TIME_HMSM_STRICT,
       &err);
   }
+  #else	
+  while (DEF_TRUE)
+  {
+   OSTimeDlyHMSM(0u, 0u, 0u, 100u,
+      OS_OPT_TIME_HMSM_STRICT,
+      &err);
+  }
+  #endif
   
 }
 

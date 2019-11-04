@@ -80,7 +80,8 @@
 #include "w5500.h"
 #include "bsp_adc.h"
 #include "bsp_usart.h"
-
+#include "pwm.h"
+#include "stm32f4xx_tim.h"
 
 /*
 *********************************************************************************************************
