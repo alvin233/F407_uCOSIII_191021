@@ -45,8 +45,8 @@
 
 #define 	APP_TASK_EQ_0_ITERATION_NBR              16u
 #define 	uart_output 0
-#define 	W5500 0
-#define 	PWM 1
+#define 	W5500 1
+#define 	PWM 0
 /*
 *********************************************************************************************************
 *                                       LOCAL GLOBAL VARIABLES
@@ -96,12 +96,11 @@ static  void  App_TaskPWM           (void  *p_arg);
 *********************************************************************************************************
 */
 
-double tmp_1028 = 0;
-double tmp_1028_1357 = 0;
-double data_out_V_V = 0;
-double data_out_Cal_I = 0;
-double data_out_Cal_V = 0;
-static double data=0;
+
+static double V_I_output;
+static double V_V_output;
+static double Cal_V_I_output;
+static double Cal_V_V_output;
 int main(void)
 {
     OS_ERR  err;
@@ -296,10 +295,9 @@ static  void  AppObjCreate (void)
 void  App_TaskEq0Fp (void  *p_arg)
 {
   OS_ERR  err;
-	#if 0
-	double tmp_1028 = 0;
-	double tmp_1028_1357 = 0;
-	static double data=0;
+	#if 1
+	static double tmp_1028 = 0;
+	static double tmp_V_V = 0;
 	#endif
   Debug_USART_Config();
   Rheostat_Init();
@@ -311,26 +309,24 @@ void  App_TaskEq0Fp (void  *p_arg)
     average();
     tmp_1028 = (float)IVOUT[0]*times_1e1_vol_per;
     tmp_1028 = tmp_1028 /10;
-    tmp_1028 = tmp_1028/4096;
+    V_I_output = tmp_1028/4096;
     #if uart_output
-		printf("\r\n V_I = %f V \r\n",tmp_1028);				
+		printf("\r\n V_I = %f V \r\n",V_I_output);				
     #endif
     /* calculate current data */
-		data = (tmp_1028-2.588)*10;
-    data_out_Cal_I = data;
+		Cal_V_I_output = (V_I_output - current_static_val)*10*4/2;
     #if uart_output
-		printf("\r\n Cal_I value = %f A \r\n",data);
+		printf("\r\n Cal_I value = %f A \r\n",Cal_V_I_output);
     #endif
 		#if 1
     /*calculate voltage data */
-		tmp_1028_1357 =(float) IVOUT[1]*times_1e1_vol_per ;
-		tmp_1028_1357 = tmp_1028_1357/10;
-		data_out_V_V = tmp_1028_1357/4096;
-    data_out_Cal_V = data_out_V_V * 16;
+		tmp_V_V =(float) IVOUT[1]*times_1e1_vol_per ;
+		tmp_V_V = tmp_V_V/10;
+		V_V_output = tmp_V_V/4096;
+    Cal_V_V_output = V_V_output * 16;
     #if uart_output
-		printf("\r\n V_V = %f V \r\n",data_out_V_V);
-		tmp_1028_1357=tmp_1028_1357*16;
-		printf("\r\n Cal_V = %f V \r\n",tmp_1028_1357);
+		printf("\r\n V_V = %f V \r\n",V_V_output);
+		printf("\r\n Cal_V = %f V \r\n",Cal_V_V_output);
     #endif 
 		#endif
   }
@@ -386,7 +382,7 @@ void  App_TaskW5500 (void  *p_arg)
     /* socket 0 send data, size 23 byte */
     Write_SOCK_Data_Buffer(0, Tx_Buffer, (15 + 4));
     /* output current */
-     sprintf(str, "\r\n V_I = %f V \r\n V_V = %f V \r\n Cal_I = %f A \r\n Cal_V = %f V \r\n ", tmp_1028, data_out_V_V, data_out_Cal_I, data_out_Cal_V);
+     sprintf(str, "\r\n V_I = %f V \r\n V_V = %f V \r\n Cal_I = %f A \r\n Cal_V = %f V \r\n ", V_I_output, V_V_output, Cal_V_I_output, Cal_V_V_output);
      memcpy(Tx_Buffer, str, 160);        
      Write_SOCK_Data_Buffer(0, Tx_Buffer, 160);
 /*
