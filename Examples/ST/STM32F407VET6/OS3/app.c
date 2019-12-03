@@ -47,6 +47,17 @@
 #define 	uart_output 0
 #define 	W5500 1
 #define 	PWM 0
+#define         Side_Selection 1  /* 1: primary side; 2: secondary side */
+#ifdef          Side_Selection 
+/* primary side selection */
+#define 	W5500 1
+#define 	PWM 0
+#else
+/* secondary side selection */
+#define 	W5500 1
+#define 	W5500_1 1
+#define 	PWM 0
+#endif
 /*
 *********************************************************************************************************
 *                                       LOCAL GLOBAL VARIABLES
@@ -62,6 +73,9 @@ static  CPU_STK      App_TaskEq0FpStk[APP_CFG_TASK_EQ_STK_SIZE];
 
 static  OS_TCB       App_TaskW5500TCB;
 static  CPU_STK      App_TaskW5500Stk[APP_CFG_TASK_W5500_STK_SIZE];
+
+static  OS_TCB       App_TaskW5500_1TCB;
+static  CPU_STK      App_TaskW5500_1Stk[APP_CFG_TASK_W5500_1_STK_SIZE];
 
 static  OS_TCB       App_TaskPWMTCB;
 static  CPU_STK      App_TaskPWMStk[APP_CFG_TASK_PWM_STK_SIZE];
@@ -81,6 +95,11 @@ static  void  AppObjCreate          (void);
 static  void  App_TaskEq0Fp         (void  *p_arg);             /* Floating Point Equation 0 task.                      */
 /* Init W5500, make connection and send data to PC */
 static  void  App_TaskW5500         (void  *p_arg); 
+
+/* Init W5500, make connection and send data to PC */
+/* This prototype is in the primary side of the project */
+static  void  App_TaskW5500_1         (void  *p_arg); 
+
 /* PWM output for the control of Inverter*/
 static  void  App_TaskPWM           (void  *p_arg);
 /*
@@ -243,6 +262,20 @@ static  void  AppTaskCreate (void)
                 (OS_OPT       )(OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR | OS_OPT_TASK_SAVE_FP),
                 (OS_ERR      *)&os_err);	
 
+    OSTaskCreate((OS_TCB      *)&App_TaskW5500_1TCB,
+                (CPU_CHAR     *)"W5500_1",
+                (OS_TASK_PTR   ) App_TaskW5500_1, 
+                (void        *) 0,
+                (OS_PRIO      ) APP_CFG_TASK_W5500_1_PRIO,
+                (CPU_STK     *)&App_TaskW5500_1Stk[0],
+                (CPU_STK_SIZE ) App_TaskW5500_1Stk[APP_CFG_TASK_W5500_1_STK_SIZE / 10u],
+                (CPU_STK_SIZE ) APP_CFG_TASK_W5500_1_STK_SIZE,
+                (OS_MSG_QTY   ) 0u,
+                (OS_TICK      ) 0u,
+                (void        *) 0,
+                (OS_OPT       )(OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR | OS_OPT_TASK_SAVE_FP),
+                (OS_ERR      *)&os_err);	
+
 		OSTaskCreate((OS_TCB      *)&App_TaskPWMTCB,
                 (CPU_CHAR     *)"PWM",
                 (OS_TASK_PTR   ) App_TaskPWM, 
@@ -397,6 +430,35 @@ void  App_TaskW5500 (void  *p_arg)
   &err);
   /* output your data by terminal */ 
   }
+	#else
+	while (DEF_TRUE) {
+  /* do something here */      
+  OSTimeDlyHMSM(0u, 0u, 1u, 10u,
+  OS_OPT_TIME_HMSM_STRICT,
+  &err);
+  }
+	#endif
+}
+
+/*
+*********************************************************************************************************
+*                                             App_TaskW5500()
+*
+* Description : This task init W5500, and connect send message.
+*               
+*
+* Argument(s) : p_arg   is the argument passed to 'App_TaskEq0Fp' by 'OSTaskCreate()'.
+*
+* Return(s)   : none.
+*
+* Note(s)     : none.
+*********************************************************************************************************
+*/
+void  App_TaskW5500_1 (void  *p_arg)
+{
+  OS_ERR  err;
+	#if W5500_1
+	;
 	#else
 	while (DEF_TRUE) {
   /* do something here */      
