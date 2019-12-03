@@ -47,15 +47,20 @@
 #define 	uart_output 0
 #define 	W5500 1
 #define 	PWM 0
-#define         Side_Selection 0  /* 1: primary side; 0: secondary side */
-#if          Side_Selection 
+
+#define         Primary_side    1       /**/
+#define         Secodary_side   2       /**/
+#define         Side_Selection  Primary_side  /* 1: primary side; 2: secondary side */
+
+#if          ( Side_Selection == Secodary_side )
 /* primary side selection */
 #define 	W5500 1
+#define 	W5500_1 1
 #define 	PWM 0
 #else
 /* secondary side selection */
 #define 	W5500 1
-#define 	W5500_1 1
+#define 	W5500_1 0
 #define 	PWM 0
 #endif
 /*
@@ -70,14 +75,13 @@ static  CPU_STK  AppTaskStartStk[APP_CFG_TASK_START_STK_SIZE];
                                                                 /* ------------ FLOATING POINT TEST TASK -------------- */
 static  OS_TCB       App_TaskEq0FpTCB;
 static  CPU_STK      App_TaskEq0FpStk[APP_CFG_TASK_EQ_STK_SIZE];
-#if W5500
+
 static  OS_TCB       App_TaskW5500TCB;
 static  CPU_STK      App_TaskW5500Stk[APP_CFG_TASK_W5500_STK_SIZE];
-#endif
-#if W5500_1
+
 static  OS_TCB       App_TaskW5500_1TCB;
 static  CPU_STK      App_TaskW5500_1Stk[APP_CFG_TASK_W5500_1_STK_SIZE];
-#endif
+
 static  OS_TCB       App_TaskPWMTCB;
 static  CPU_STK      App_TaskPWMStk[APP_CFG_TASK_PWM_STK_SIZE];
 
@@ -205,7 +209,7 @@ static  void  AppTaskStart (void *p_arg)
 
        
 			
-        OSTimeDlyHMSM(0u, 0u, 0u, 100u,
+        OSTimeDlyHMSM(0u, 0u, 2u, 100u,
                       OS_OPT_TIME_HMSM_STRICT,
                       &err);
         /* do something here */
@@ -456,6 +460,7 @@ void  App_TaskW5500 (void  *p_arg)
 * Note(s)     : none.
 *********************************************************************************************************
 */
+
 void  App_TaskW5500_1 (void  *p_arg)
 {
   OS_ERR  err;

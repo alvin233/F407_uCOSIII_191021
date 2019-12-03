@@ -1,6 +1,8 @@
 #include "bsp_pid.h"
 #include "stm32f4xx_dac.h"
-extern double tmp_1028_1357;
+/* extern double tmp_1028_1357; */
+/* extern double Cal_V_V_output; */
+float v_data = 0.5;
 float setVout_temp_f;
 float setVout_temp_i;
 float setVout;
@@ -42,7 +44,7 @@ void pidcalc_v(void)
 void pidrun(void)
 {
 	    pid_v.set = setVout;
-			pid_v.actual=tmp_1028_1357;
+			pid_v.actual=v_data;
 			pidcalc_v( );
 			setVout_temp_f+=pid_v.ctr;
 	    setVout_temp_i=setVout_temp_f;
