@@ -2,7 +2,7 @@
 #include "stm32f4xx_dac.h"
 extern double tmp_1028_1357;
 float setVout_temp_f;
-int setVout_temp_i;
+float setVout_temp_i;
 float setVout;
 typedef struct{		
 	float set;		

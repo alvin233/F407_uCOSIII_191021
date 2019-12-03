@@ -47,8 +47,8 @@
 #define 	uart_output 0
 #define 	W5500 1
 #define 	PWM 0
-#define         Side_Selection 1  /* 1: primary side; 2: secondary side */
-#ifdef          Side_Selection 
+#define         Side_Selection 0  /* 1: primary side; 0: secondary side */
+#if          Side_Selection 
 /* primary side selection */
 #define 	W5500 1
 #define 	PWM 0
@@ -70,13 +70,14 @@ static  CPU_STK  AppTaskStartStk[APP_CFG_TASK_START_STK_SIZE];
                                                                 /* ------------ FLOATING POINT TEST TASK -------------- */
 static  OS_TCB       App_TaskEq0FpTCB;
 static  CPU_STK      App_TaskEq0FpStk[APP_CFG_TASK_EQ_STK_SIZE];
-
+#if W5500
 static  OS_TCB       App_TaskW5500TCB;
 static  CPU_STK      App_TaskW5500Stk[APP_CFG_TASK_W5500_STK_SIZE];
-
+#endif
+#if W5500_1
 static  OS_TCB       App_TaskW5500_1TCB;
 static  CPU_STK      App_TaskW5500_1Stk[APP_CFG_TASK_W5500_1_STK_SIZE];
-
+#endif
 static  OS_TCB       App_TaskPWMTCB;
 static  CPU_STK      App_TaskPWMStk[APP_CFG_TASK_PWM_STK_SIZE];
 
@@ -247,7 +248,7 @@ static  void  AppTaskCreate (void)
                  (void        *) 0,
                  (OS_OPT       )(OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR | OS_OPT_TASK_SAVE_FP),
                  (OS_ERR      *)&os_err);
-								 
+#if W5500								 
 		OSTaskCreate((OS_TCB      *)&App_TaskW5500TCB,
                 (CPU_CHAR     *)"W5500",
                 (OS_TASK_PTR   ) App_TaskW5500, 
@@ -261,7 +262,8 @@ static  void  AppTaskCreate (void)
                 (void        *) 0,
                 (OS_OPT       )(OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR | OS_OPT_TASK_SAVE_FP),
                 (OS_ERR      *)&os_err);	
-
+#endif
+#if W5500_1
     OSTaskCreate((OS_TCB      *)&App_TaskW5500_1TCB,
                 (CPU_CHAR     *)"W5500_1",
                 (OS_TASK_PTR   ) App_TaskW5500_1, 
@@ -275,7 +277,7 @@ static  void  AppTaskCreate (void)
                 (void        *) 0,
                 (OS_OPT       )(OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR | OS_OPT_TASK_SAVE_FP),
                 (OS_ERR      *)&os_err);	
-
+#endif
 		OSTaskCreate((OS_TCB      *)&App_TaskPWMTCB,
                 (CPU_CHAR     *)"PWM",
                 (OS_TASK_PTR   ) App_TaskPWM, 
@@ -458,7 +460,54 @@ void  App_TaskW5500_1 (void  *p_arg)
 {
   OS_ERR  err;
 	#if W5500_1
-	;
+		  char str[160];
+  //char str_1[160];
+/* SPI configuration */
+  SPI_1_Configuration();	
+  /* GPIO Init */
+  W5500_1_GPIO_Configuration();
+  /* Setting Net Parameter */
+  Load_1_Net_Parameters();
+  /* Reset */
+  W5500_1_Hardware_Reset();
+  W5500_1_Initialization();		
+  while (DEF_TRUE) {
+  W5500_1_Socket_Set();
+  if(W5500_1_Interrupt)	
+  {
+    /* Interrupt happened */
+    W5500_1_Interrupt_Process();
+  }
+  if((S0_1_Data & S_RECEIVE) == S_RECEIVE)
+  {
+    /* socket0 received data */
+    S0_1_Data&=~S_RECEIVE;
+    /* receive data and re-send it */
+    Process_1_Socket_Data(0);
+  }
+  /* send every 500ms */
+  if(S0_1_State == (S_INIT|S_CONN))
+  {
+    S0_1_Data&=~S_TRANSMITOK;
+    memcpy(Tx_1_Buffer, "\r\nWelcome To CQU!\r\n", 19);	
+    /* socket 0 send data, size 23 byte */
+    Write_1_SOCK_Data_Buffer(0, Tx_1_Buffer, (15 + 4));
+    /* output current */
+     //sprintf(str, "\r\n V_I = %f V \r\n V_V = %f V \r\n Cal_I = %f A \r\n Cal_V = %f V \r\n ", tmp_1028, data_out_V_V, data_out_Cal_I, data_out_Cal_V);
+     memcpy(Tx_1_Buffer, str, 160);        
+     Write_1_SOCK_Data_Buffer(0, Tx_1_Buffer, 160);
+/*
+     sprintf(str_1, "\r\n V_V = %f V \r\n", data_out_V_V);
+     memcpy(Tx_Buffer, str_1, 80);
+     Write_SOCK_Data_Buffer(0, Tx_Buffer, 80);
+*/
+  }			
+  /* do something here */      
+  OSTimeDlyHMSM(0u, 0u, 1u, 10u,
+  OS_OPT_TIME_HMSM_STRICT,
+  &err);
+  /* output your data by terminal */ 
+  }
 	#else
 	while (DEF_TRUE) {
   /* do something here */      

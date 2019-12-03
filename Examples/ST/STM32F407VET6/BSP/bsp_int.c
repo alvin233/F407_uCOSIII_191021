@@ -393,7 +393,9 @@ void  BSP_IntHandlerLTDC               (void)  { BSP_IntHandler(BSP_INT_ID_LTDC)
 void  BSP_IntHandlerLTDC_ER            (void)  { BSP_IntHandler(BSP_INT_ID_LTDC_ER);             }
 void  BSP_IntHandlerDMA2D              (void)  { BSP_IntHandler(BSP_INT_ID_DMA2D);               }
 
+void EXTI3_IRQHandler(void);
 void EXTI4_IRQHandler(void);
+
 /*
 *********************************************************************************************************
 *********************************************************************************************************
@@ -406,10 +408,20 @@ void EXTI4_IRQHandler(void);
 2）使能SYSCFG时钟，设置IO口与中断线的映射关系。 
 3）初始化线上中断，设置触发条件等。 
 4）配置中断分组（NVIC），并使能中断。 
-
 5）编写中断服务函数。 
 */
-	
+void EXTI3_IRQHandler(void)
+{	
+  OSIntEnter();
+  if(EXTI_GetITStatus(EXTI_Line3) != RESET)
+  {
+    EXTI_ClearITPendingBit(EXTI_Line3);
+    //APP_TRACE_INFO(("Exti4\n"));     
+   W5500_1_Interrupt=1;
+  }
+  OSIntExit();
+}
+
 void EXTI4_IRQHandler(void)
 {	
   OSIntEnter();

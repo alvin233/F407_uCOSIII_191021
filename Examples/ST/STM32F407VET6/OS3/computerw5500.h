@@ -1,5 +1,5 @@
-#ifndef	_W5500_H_
-#define	_W5500_H_
+#ifndef	COMPUTERW5500_H_
+#define	COMPUTERW5500_H_
 
 /* typedef unsigned char SOCKET;			//自定义端口号数据类型 */
 #include "W5500_common.h"
@@ -207,100 +207,96 @@
 #define S_TX_SIZE	2048  	/*定义Socket发送缓冲区的大小，可以根据W5500_TMSR的设置修改 */
 
 /***************----- W5500 GPIO定义 -----***************/
-#define SPI_SEL   SPI2
-#define W5500_SPI_CLK_Pin GPIO_Pin_13
-#define W5500_SPI_CLK_PORT	GPIOB
+#define SPI_1_SEL   SPI3
+#define W5500_1_SPI_CLK_Pin GPIO_Pin_10
+#define W5500_1_SPI_CLK_PORT	GPIOC
 
-#define W5500_SPI_MISO_Pin GPIO_Pin_14
-#define W5500_SPI_MISO_PORT	GPIOB
+#define W5500_1_SPI_MISO_Pin GPIO_Pin_11
+#define W5500_1_SPI_MISO_PORT	GPIOC
 
-#define W5500_SPI_MOSI_Pin GPIO_Pin_15
-#define W5500_SPI_MOSI_PORT	GPIOB
+#define W5500_1_SPI_MOSI_Pin GPIO_Pin_12
+#define W5500_1_SPI_MOSI_PORT	GPIOC
 
-#define W5500_SCS_Pin		GPIO_Pin_12	//定义W5500的CS引脚	 
-#define W5500_SCS_PORT	GPIOB
+#define W5500_1_SCS_Pin		GPIO_Pin_7	//定义W5500的CS引脚	 
+#define W5500_1_SCS_PORT	GPIOC
 	
-#define W5500_RST_Pin		GPIO_Pin_11	//定义W5500的RST引脚
-#define W5500_RST_PORT	GPIOB
+#define W5500_1_RST_Pin		GPIO_Pin_8	//定义W5500的RST引脚
+#define W5500_1_RST_PORT	GPIOC
 
-#define W5500_INT_Pin		GPIO_Pin_4	//定义W5500的INT引脚
-#define W5500_INT_PORT	GPIOC
+#define W5500_1_INT_Pin		GPIO_Pin_3	//定义W5500的INT引脚
+#define W5500_1_INT_PORT	GPIOC
 
 /***************----- 网络参数变量定义 -----***************/
-extern unsigned char Gateway_IP[4];	//网关IP地址 
-extern unsigned char Sub_Mask[4];	//子网掩码 
-extern unsigned char Phy_Addr[6];	//物理地址(MAC) 
-extern unsigned char IP_Addr[4];	//本机IP地址 
+extern unsigned char Gateway_1_IP[4];	//网关IP地址 
+extern unsigned char Sub_1_Mask[4];	//子网掩码 
+extern unsigned char Phy_1_Addr[6];	//物理地址(MAC) 
+extern unsigned char IP_1_Addr[4];	//本机IP地址 
 
-extern unsigned char S0_Port[2];	//端口0的端口号(5000) 
-extern unsigned char S0_DIP[4];		//端口0目的IP地址 
-extern unsigned char S0_DPort[2];	//端口0目的端口号(6000) 
+extern unsigned char S0_1_Port[2];	//端口0的端口号(5000) 
+extern unsigned char S0_1_DIP[4];		//端口0目的IP地址 
+extern unsigned char S0_1_DPort[2];	//端口0目的端口号(6000) 
 
-extern unsigned char UDP_DIPR[4];	//UDP(广播)模式,目的主机IP地址
-extern unsigned char UDP_DPORT[2];	//UDP(广播)模式,目的主机端口号
+extern unsigned char UDP_1_DIPR[4];	//UDP(广播)模式,目的主机IP地址
+extern unsigned char UDP_1_DPORT[2];	//UDP(广播)模式,目的主机端口号
 
 /***************----- 端口的运行模式 -----***************/
-extern unsigned char S0_Mode;	//端口0的运行模式,0:TCP服务器模式,1:TCP客户端模式,2:UDP(广播)模式
+extern unsigned char S0_1_Mode;	//端口0的运行模式,0:TCP服务器模式,1:TCP客户端模式,2:UDP(广播)模式
 #define TCP_SERVER		0x00	//TCP服务器模式
 #define TCP_CLIENT		0x01	//TCP客户端模式 
 #define UDP_MODE		0x02	//UDP(广播)模式 
 
 /***************----- 端口的运行状态 -----***************/
-extern unsigned char S0_State;	//端口0状态记录,1:端口完成初始化,2端口完成连接(可以正常传输数据) 
+extern unsigned char S0_1_State;	//端口0状态记录,1:端口完成初始化,2端口完成连接(可以正常传输数据) 
 #define S_INIT			0x01	//端口完成初始化 
 #define S_CONN			0x02	//端口完成连接,可以正常传输数据 
 
 /***************----- 端口收发数据的状态 -----***************/
-extern unsigned char S0_Data;		//端口0接收和发送数据的状态,1:端口接收到数据,2:端口发送数据完成 
+extern unsigned char S0_1_Data;		//端口0接收和发送数据的状态,1:端口接收到数据,2:端口发送数据完成 
 #define S_RECEIVE		0x01		//端口接收到一个数据包 
 #define S_TRANSMITOK	0x02		//端口发送一个数据包完成 
 
 /***************----- 端口数据缓冲区 -----***************/
-extern unsigned char Rx_Buffer[2048];	//端口接收数据缓冲区 
-extern unsigned char Tx_Buffer[2048];	//端口发送数据缓冲区 
+extern unsigned char Rx_1_Buffer[2048];	//端口接收数据缓冲区 
+extern unsigned char Tx_1_Buffer[2048];	//端口发送数据缓冲区 
 
-extern unsigned char W5500_Interrupt;	//W5500中断标志(0:无中断,1:有中断)
+extern unsigned char W5500_1_Interrupt;	//W5500中断标志(0:无中断,1:有中断)
 
-
-extern void Delay(unsigned int d);//延时函数(ms)
-extern void W5500_GPIO_Configuration(void);//W5500 GPIO初始化配置
-extern void W5500_NVIC_Configuration(void);//W5500 接收引脚中断优先级设置
-extern void SPI_Configuration(void);//W5500 SPI初始化配置(STM32 SPI1)
-extern void W5500_Hardware_Reset(void);//硬件复位W5500
-extern void W5500_Init(void);//初始化W5500寄存器函数
-extern unsigned char Detect_Gateway(void);//检查网关服务器
-extern void Socket_Init(SOCKET s);//指定Socket(0~7)初始化
-extern unsigned char Socket_Connect(SOCKET s);//设置指定Socket(0~7)为客户端与远程服务器连接
-extern unsigned char Socket_Listen(SOCKET s);//设置指定Socket(0~7)作为服务器等待远程主机的连接
-extern unsigned char Socket_UDP(SOCKET s);//设置指定Socket(0~7)为UDP模式
-extern unsigned short Read_SOCK_Data_Buffer(SOCKET s, unsigned char *dat_ptr);//指定Socket(0~7)接收数据处理
-extern void Write_SOCK_Data_Buffer(SOCKET s, unsigned char *dat_ptr, unsigned short size); //指定Socket(0~7)发送数据处理
-extern void W5500_Interrupt_Process(void);//W5500中断处理程序框架
-extern void Load_Net_Parameters(void);
-extern void W5500_Initialization(void);
-extern void W5500_Init(void);
-extern void Write_W5500_1Byte(unsigned short reg, unsigned char dat);
-extern void Write_W5500_nByte(unsigned short reg, unsigned char *dat_ptr, unsigned short size);
-extern void Write_W5500_SOCK_1Byte(SOCKET s, unsigned short reg, unsigned char dat);
-extern void SPI2_Send_Byte(unsigned char dat);
-extern void SPI2_Send_Short(unsigned short dat);
-extern void Write_W5500_2Byte(unsigned short reg, unsigned short dat);
-extern unsigned char Detect_Gateway(void);
-extern void Write_W5500_SOCK_4Byte(SOCKET s, unsigned short reg, unsigned char *dat_ptr);
-extern unsigned char Read_W5500_SOCK_1Byte(SOCKET s, unsigned short reg);
-extern void Socket_Init(SOCKET s);
-extern void Write_W5500_SOCK_2Byte(SOCKET s, unsigned short reg, unsigned short dat);
-extern void W5500_Hardware_Reset(void);
-extern unsigned char Read_W5500_1Byte(unsigned short reg);
-extern void W5500_Socket_Set(void);
-extern unsigned char Socket_Connect(SOCKET s);
-extern unsigned char Socket_Listen(SOCKET s);
-extern unsigned char Socket_UDP(SOCKET s);
-extern void W5500_Interrupt_Process(void);
-extern void Process_Socket_Data(SOCKET s);
-extern void Write_SOCK_Data_Buffer(SOCKET s, unsigned char *dat_ptr, unsigned short size);
-extern unsigned short Read_W5500_SOCK_2Byte(SOCKET s, unsigned short reg);
-extern unsigned short Read_SOCK_Data_Buffer(SOCKET s, unsigned char *dat_ptr);
-extern void EXTI4_IRQHandler(void);;
+extern void W5500_1_GPIO_Configuration(void);//W5500 GPIO初始化配置
+extern void SPI_1_Configuration(void);//W5500 SPI初始化配置(STM32 SPI2)
+extern void W5500_1_Hardware_Reset(void);//硬件复位W5500
+extern void W5500_1_Init(void);//初始化W5500寄存器函数
+extern unsigned char Detect_1_Gateway(void);//检查网关服务器
+extern void Socket_1_Init(SOCKET s);//指定Socket(0~7)初始化
+extern unsigned char Socket_1_Connect(SOCKET s);//设置指定Socket(0~7)为客户端与远程服务器连接
+extern unsigned char Socket_1_Listen(SOCKET s);//设置指定Socket(0~7)作为服务器等待远程主机的连接
+extern unsigned char Socket_1_UDP(SOCKET s);//设置指定Socket(0~7)为UDP模式
+extern unsigned short Read_1_SOCK_Data_Buffer(SOCKET s, unsigned char *dat_ptr);//指定Socket(0~7)接收数据处理
+extern void Write_1_SOCK_Data_Buffer(SOCKET s, unsigned char *dat_ptr, unsigned short size); //指定Socket(0~7)发送数据处理
+extern void W5500_1_Interrupt_Process(void);//W5500中断处理程序框架
+extern void Load_1_Net_Parameters(void);
+extern void W5500_1_Initialization(void);
+extern void Write_1_W5500_1Byte(unsigned short reg, unsigned char dat);
+extern void Write_1_W5500_nByte(unsigned short reg, unsigned char *dat_ptr, unsigned short size);
+extern void Write_1_W5500_SOCK_1Byte(SOCKET s, unsigned short reg, unsigned char dat);
+extern void SPI1_Send_Byte(unsigned char dat);
+extern void SPI1_Send_Short(unsigned short dat);
+extern void Write_1_W5500_2Byte(unsigned short reg, unsigned short dat);
+extern unsigned char Detect_1_Gateway(void);
+extern void Write_1_W5500_SOCK_4Byte(SOCKET s, unsigned short reg, unsigned char *dat_ptr);
+extern unsigned char Read_1_W5500_SOCK_1Byte(SOCKET s, unsigned short reg);
+extern void Socket_1_Init(SOCKET s);
+extern void Write_1_W5500_SOCK_2Byte(SOCKET s, unsigned short reg, unsigned short dat);
+extern void W5500_1_Hardware_Reset(void);
+extern unsigned char Read_1_W5500_1Byte(unsigned short reg);
+extern void W5500_1_Socket_Set(void);
+extern unsigned char Socket_1_Connect(SOCKET s);
+extern unsigned char Socket_1_Listen(SOCKET s);
+extern unsigned char Socket_1_UDP(SOCKET s);
+extern void W5500_1_Interrupt_Process(void);
+extern void Process_1_Socket_Data(SOCKET s);
+extern void Write_1_SOCK_Data_Buffer(SOCKET s, unsigned char *dat_ptr, unsigned short size);
+extern unsigned short Read_1_W5500_SOCK_2Byte(SOCKET s, unsigned short reg);
+extern unsigned short Read_1_SOCK_Data_Buffer(SOCKET s, unsigned char *dat_ptr);
+extern void EXTI3_IRQHandler(void);;
 #endif
 

@@ -5,7 +5,7 @@ void pidinit_v(void);
 void pidcalc_v(void);
 void pidrun(void);
 extern float setVout_temp_f;
-extern int setVout_temp_i;
+extern float setVout_temp_i;
 extern float setVout;
 #endif
 

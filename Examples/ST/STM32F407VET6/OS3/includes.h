@@ -78,6 +78,7 @@
 #include  <app_cfg.h>
 #include  <bsp.h>
 #include "w5500.h"
+#include "computerw5500.h"
 #include "bsp_adc.h"
 #include "bsp_usart.h"
 #include "pwm.h"
