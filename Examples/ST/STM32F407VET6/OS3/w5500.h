@@ -3,6 +3,27 @@
 
 /* typedef unsigned char SOCKET;			//自定义端口号数据类型 */
 #include "W5500_common.h"
+/***************----- W5500 GPIO定义 -----***************/
+#define SPI_SEL   SPI2
+#define W5500_SPI_CLK_Pin GPIO_Pin_13
+#define W5500_SPI_CLK_PORT	GPIOB
+
+#define W5500_SPI_MISO_Pin GPIO_Pin_14
+#define W5500_SPI_MISO_PORT	GPIOB
+
+#define W5500_SPI_MOSI_Pin GPIO_Pin_15
+#define W5500_SPI_MOSI_PORT	GPIOB
+
+#define W5500_SCS_Pin		GPIO_Pin_12	//定义W5500的CS引脚	 
+#define W5500_SCS_PORT	GPIOB
+	
+#define W5500_RST_Pin		GPIO_Pin_11	//定义W5500的RST引脚
+#define W5500_RST_PORT	GPIOB
+
+#define W5500_INT_Pin		GPIO_Pin_4	//定义W5500的INT引脚
+#define W5500_INT_PORT	GPIOC
+
+/***************----- 网络参数变量定义 -----***************/
 
 /***************** Common Register *****************/
 #define MR		0x0000
@@ -206,27 +227,7 @@
 #define S_RX_SIZE	2048	/*定义Socket接收缓冲区的大小，可以根据W5500_RMSR的设置修改 */
 #define S_TX_SIZE	2048  	/*定义Socket发送缓冲区的大小，可以根据W5500_TMSR的设置修改 */
 
-/***************----- W5500 GPIO定义 -----***************/
-#define SPI_SEL   SPI2
-#define W5500_SPI_CLK_Pin GPIO_Pin_13
-#define W5500_SPI_CLK_PORT	GPIOB
 
-#define W5500_SPI_MISO_Pin GPIO_Pin_14
-#define W5500_SPI_MISO_PORT	GPIOB
-
-#define W5500_SPI_MOSI_Pin GPIO_Pin_15
-#define W5500_SPI_MOSI_PORT	GPIOB
-
-#define W5500_SCS_Pin		GPIO_Pin_12	//定义W5500的CS引脚	 
-#define W5500_SCS_PORT	GPIOB
-	
-#define W5500_RST_Pin		GPIO_Pin_11	//定义W5500的RST引脚
-#define W5500_RST_PORT	GPIOB
-
-#define W5500_INT_Pin		GPIO_Pin_4	//定义W5500的INT引脚
-#define W5500_INT_PORT	GPIOC
-
-/***************----- 网络参数变量定义 -----***************/
 extern unsigned char Gateway_IP[4];	//网关IP地址 
 extern unsigned char Sub_Mask[4];	//子网掩码 
 extern unsigned char Phy_Addr[6];	//物理地址(MAC) 
@@ -266,7 +267,7 @@ extern void Delay(unsigned int d);//延时函数(ms)
 extern void W5500_GPIO_Configuration(void);//W5500 GPIO初始化配置
 extern void W5500_NVIC_Configuration(void);//W5500 接收引脚中断优先级设置
 extern void SPI_Configuration(void);//W5500 SPI初始化配置(STM32 SPI1)
-extern void W5500_Hardware_Reset(void);//硬件复位W5500
+extern int W5500_Hardware_Reset(void);//硬件复位W5500
 extern void W5500_Init(void);//初始化W5500寄存器函数
 extern unsigned char Detect_Gateway(void);//检查网关服务器
 extern void Socket_Init(SOCKET s);//指定Socket(0~7)初始化
@@ -290,7 +291,7 @@ extern void Write_W5500_SOCK_4Byte(SOCKET s, unsigned short reg, unsigned char *
 extern unsigned char Read_W5500_SOCK_1Byte(SOCKET s, unsigned short reg);
 extern void Socket_Init(SOCKET s);
 extern void Write_W5500_SOCK_2Byte(SOCKET s, unsigned short reg, unsigned short dat);
-extern void W5500_Hardware_Reset(void);
+//extern void W5500_Hardware_Reset(void);
 extern unsigned char Read_W5500_1Byte(unsigned short reg);
 extern void W5500_Socket_Set(void);
 extern unsigned char Socket_Connect(SOCKET s);
@@ -301,6 +302,7 @@ extern void Process_Socket_Data(SOCKET s);
 extern void Write_SOCK_Data_Buffer(SOCKET s, unsigned char *dat_ptr, unsigned short size);
 extern unsigned short Read_W5500_SOCK_2Byte(SOCKET s, unsigned short reg);
 extern unsigned short Read_SOCK_Data_Buffer(SOCKET s, unsigned char *dat_ptr);
-extern void EXTI4_IRQHandler(void);;
+extern void EXTI4_IRQHandler(void);
+extern void W5500_Initial(void);
 #endif
 

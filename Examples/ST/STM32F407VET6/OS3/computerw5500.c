@@ -139,7 +139,7 @@ void W5500_1_GPIO_Configuration(void)
   /* NVIC Configuration */
   NVIC_InitStructure.NVIC_IRQChannel = EXTI3_IRQn; 
   NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x02; 
-  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x02; 
+  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x01; 
   NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE; 
   NVIC_Init(&NVIC_InitStructure);
 	/* must configure these two steps when using uC/OS-III */
@@ -243,7 +243,7 @@ void Load_1_Net_Parameters(void)
 	IP_1_Addr[0]=192;
 	IP_1_Addr[1]=168;
 	IP_1_Addr[2]=15;
-	IP_1_Addr[3]=3;
+	IP_1_Addr[3]=2;
 	/* port 0, port number. 0x1388 = 0d5000*/
 	S0_1_Port[0] = 0x13;
 	S0_1_Port[1] = 0x88;

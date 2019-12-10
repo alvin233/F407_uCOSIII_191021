@@ -618,7 +618,7 @@ void Write_W5500_SOCK_2Byte(SOCKET s, unsigned short reg, unsigned short dat)
  * Return : None
  * Others : None
 *******************************************************************************/
-void W5500_Hardware_Reset(void)
+int W5500_Hardware_Reset(void)
 {
 	OS_ERR  err;
 	/* pull down reset IO pin */
@@ -634,7 +634,14 @@ void W5500_Hardware_Reset(void)
 					OS_OPT_TIME_HMSM_STRICT,
 					&err);
 	/* wait for link connection, had better re-write this function */
-	while((Read_W5500_1Byte(PHYCFGR)&LINK)==0);
+	if((Read_W5500_1Byte(PHYCFGR)&LINK)==0)
+	{
+		return (1);
+	}
+	else
+	{
+		return (0);
+	}
 }
 /*******************************************************************************
  * Funtion : Read_W5500_1Byte
@@ -1054,6 +1061,24 @@ unsigned short Read_SOCK_Data_Buffer(SOCKET s, unsigned char *dat_ptr)
 	Write_W5500_SOCK_1Byte(s, Sn_CR, RECV);//����������������
 	return rx_size;//���ؽ��յ����ݵĳ���
 }
-
+void W5500_Initial(void)
+{
+    OS_ERR  err;
+/* SPI configuration */
+  SPI_Configuration();	
+  /* GPIO Init */
+  W5500_GPIO_Configuration();
+  /* Setting Net Parameter */
+  Load_Net_Parameters();
+  /* Reset */
+  while(!W5500_Hardware_Reset())
+    {
+    /* trap CPU here while W5500 hardware reset wrong */
+    OSTimeDlyHMSM(0u, 0u, 2u, 100u,
+      OS_OPT_TIME_HMSM_STRICT,
+      &err);
+    }
+  W5500_Initialization();	
+}
 
 
