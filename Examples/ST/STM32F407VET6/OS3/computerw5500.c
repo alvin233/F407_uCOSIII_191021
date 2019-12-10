@@ -620,7 +620,7 @@ void Write_1_W5500_SOCK_2Byte(SOCKET s, unsigned short reg, unsigned short dat)
  * Return : None
  * Others : None
 *******************************************************************************/
-void W5500_1_Hardware_Reset(void)
+int W5500_1_Hardware_Reset(void)
 {
 	OS_ERR  err;
 	/* pull down reset IO pin */
@@ -636,7 +636,14 @@ void W5500_1_Hardware_Reset(void)
 					OS_OPT_TIME_HMSM_STRICT,
 					&err);
 	/* wait for link connection, had better re-write this function */
-	while((Read_1_W5500_1Byte(PHYCFGR)&LINK)==0);
+	if((Read_1_W5500_1Byte(PHYCFGR)&LINK)==0)
+	{
+		return (1);
+	}
+	else
+	{
+		return (0);
+	}
 }
 /*******************************************************************************
  * Funtion : Read_W5500_1Byte

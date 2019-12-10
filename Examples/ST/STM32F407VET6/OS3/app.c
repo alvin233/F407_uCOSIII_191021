@@ -117,10 +117,7 @@ static  void  App_TaskEq0Fp         (void  *p_arg);
 */
 
 
-static double V_I_output;
-static double V_V_output;
-static double Cal_V_I_output;
-static double Cal_V_V_output;
+
 int main(void)
 {
     OS_ERR  err;

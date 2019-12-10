@@ -1,6 +1,10 @@
 #include  <includes.h>
 #include "app_add.h"
 
+ double V_I_output;
+ double V_V_output;
+ double Cal_V_I_output;
+ double Cal_V_V_output;
 /*
 *********************************************************************************************************
 *                                             App_TaskW5500()
@@ -18,9 +22,7 @@
 void  App_TaskW5500 (void  *p_arg)
 {
   OS_ERR  err;
-	#if W5500
-	  char str[160];
-  //char str_1[160];
+	char str[160];
 /* SPI configuration */
   SPI_Configuration();	
   /* GPIO Init */
@@ -29,6 +31,7 @@ void  App_TaskW5500 (void  *p_arg)
   Load_Net_Parameters();
   /* Reset */
   W5500_Hardware_Reset();
+	
   W5500_Initialization();		
   while (DEF_TRUE) {
   W5500_Socket_Set();
@@ -67,14 +70,6 @@ void  App_TaskW5500 (void  *p_arg)
   &err);
   /* output your data by terminal */ 
   }
-	#else
-	while (DEF_TRUE) {
-  /* do something here */      
-  OSTimeDlyHMSM(0u, 0u, 1u, 10u,
-  OS_OPT_TIME_HMSM_STRICT,
-  &err);
-  }
-	#endif
 }
 
 /*
@@ -95,7 +90,7 @@ void  App_TaskW5500 (void  *p_arg)
 void  App_TaskW5500_1 (void  *p_arg)
 {
   OS_ERR  err;
-		  char str[160];
+	char str[160];
   //char str_1[160];
 /* SPI configuration */
   SPI_1_Configuration();	
@@ -104,7 +99,14 @@ void  App_TaskW5500_1 (void  *p_arg)
   /* Setting Net Parameter */
   Load_1_Net_Parameters();
   /* Reset */
-  W5500_1_Hardware_Reset();
+  while(!W5500_1_Hardware_Reset())
+	{
+		/* trap CPU here while W5500 hardware reset wrong */
+  OSTimeDlyHMSM(0u, 0u, 2u, 100u,
+		OS_OPT_TIME_HMSM_STRICT,
+		&err);
+	}
+	/* W5500 hardware reset OK */
   W5500_1_Initialization();		
   while (DEF_TRUE) {
   W5500_1_Socket_Set();

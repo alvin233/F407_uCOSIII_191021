@@ -263,7 +263,7 @@ extern unsigned char W5500_1_Interrupt;	//W5500中断标志(0:无中断,1:有中断)
 
 extern void W5500_1_GPIO_Configuration(void);//W5500 GPIO初始化配置
 extern void SPI_1_Configuration(void);//W5500 SPI初始化配置(STM32 SPI2)
-extern void W5500_1_Hardware_Reset(void);//硬件复位W5500
+//extern int W5500_1_Hardware_Reset(void);//硬件复位W5500
 extern void W5500_1_Init(void);//初始化W5500寄存器函数
 extern unsigned char Detect_1_Gateway(void);//检查网关服务器
 extern void Socket_1_Init(SOCKET s);//指定Socket(0~7)初始化
@@ -286,7 +286,7 @@ extern void Write_1_W5500_SOCK_4Byte(SOCKET s, unsigned short reg, unsigned char
 extern unsigned char Read_1_W5500_SOCK_1Byte(SOCKET s, unsigned short reg);
 extern void Socket_1_Init(SOCKET s);
 extern void Write_1_W5500_SOCK_2Byte(SOCKET s, unsigned short reg, unsigned short dat);
-extern void W5500_1_Hardware_Reset(void);
+extern int W5500_1_Hardware_Reset(void);
 extern unsigned char Read_1_W5500_1Byte(unsigned short reg);
 extern void W5500_1_Socket_Set(void);
 extern unsigned char Socket_1_Connect(SOCKET s);
