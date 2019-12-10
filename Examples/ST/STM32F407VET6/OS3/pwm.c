@@ -1,32 +1,47 @@
 #include "pwm.h"
 #include "stm32f4xx.h"
 #include "stm32f4xx_tim.h"
-uint16_t DeadTime;
-uint32_t ccr_temp;
+
+/* dead time setting */
+uint16_t DeadTime = 0x20;
+/* starting output PWM ratio */
+uint32_t ccr_temp = 50;
 
 void TIM1_GPIO_Config(void)
-{
+{	
 	GPIO_InitTypeDef GPIO_InitStructure;
-	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA|RCC_AHB1Periph_GPIOE|RCC_AHB1Periph_GPIOC,ENABLE);//使能时钟
-	GPIO_PinAFConfig(GPIOA,GPIO_PinSource8,GPIO_AF_TIM1);//TIM1_CH1
-	GPIO_PinAFConfig(GPIOE,GPIO_PinSource8,GPIO_AF_TIM1);//TIM1_CH1N
-//	GPIO_PinAFConfig(GPIOA,GPIO_PinSource5,GPIO_AF_TIM8);//TIM8_CH1N
-	GPIO_PinAFConfig(GPIOC,GPIO_PinSource6,GPIO_AF_TIM8);//TIM8_CH1
-	
+	/* enable CLK */
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA|RCC_AHB1Periph_GPIOE|RCC_AHB1Periph_GPIOC,ENABLE);
+	/* enable PIN's AF function */
+	/* TIM1_CH1  PA8 */
+	GPIO_PinAFConfig(GPIOA,GPIO_PinSource8,GPIO_AF_TIM1);
+	/* TIM1_CH1N PE8 */
+	/* enable PE8's AF function as the clk source of pwm output negtive side */
+	GPIO_PinAFConfig(GPIOE,GPIO_PinSource8,GPIO_AF_TIM1);
+	/* TIM8_CH1N PA5 */
+  /* GPIO_PinAFConfig(GPIOA,GPIO_PinSource5,GPIO_AF_TIM8); */
+	/* TIM8_CH1 PC6 */
+	GPIO_PinAFConfig(GPIOC,GPIO_PinSource6,GPIO_AF_TIM8);
+	/* PIN configuration below share the same function as below, be careful */
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;													//复用功能
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8;											//引脚设定
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;												//速度
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;      											//推挽复用输出
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;        											//上拉
-	GPIO_Init(GPIOA,&GPIO_InitStructure);															
-	
+	/* enable PC6's GPIO function as the pos-side of the output signal */
+	/* PC6 */
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
 	GPIO_Init(GPIOC,&GPIO_InitStructure);
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8;
+#if 0
+	/* PE8 */
+	/* disable PE8's GPIO function because we use the neg-side of the output signal by connecting to PA8 */
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8; 
 	GPIO_Init(GPIOE,&GPIO_InitStructure);
+#endif 
+	/* PA8 */
+	/* enable PA8's GPIO function as the neg-side of the output signal */
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8;											//引脚设定 
+	GPIO_Init(GPIOA,&GPIO_InitStructure);			
 
-	DeadTime = 0x20;
-	ccr_temp = 50;
 }
 
 void Tim1__Config(void)
