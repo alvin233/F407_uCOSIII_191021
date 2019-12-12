@@ -413,11 +413,16 @@ void EXTI4_IRQHandler(void);
 void EXTI3_IRQHandler(void)
 {	
   OSIntEnter();
+	OS_ERR err;
   if(EXTI_GetITStatus(EXTI_Line3) != RESET)
   {
     EXTI_ClearITPendingBit(EXTI_Line3);
-    //APP_TRACE_INFO(("Exti4\n"));     
-   W5500_1_Interrupt=1;
+    //APP_TRACE_INFO(("Exti4\n"));    
+		OSFlagPost(&W5500IntFlagGrp,
+								(OS_FLAGS)(W5500_1_IntFlag), 
+								OS_OPT_POST_FLAG_SET, 
+								&err);		
+   //W5500_1_Interrupt=1;
   }
   OSIntExit();
 }
@@ -425,21 +430,17 @@ void EXTI3_IRQHandler(void)
 void EXTI4_IRQHandler(void)
 {	
   OSIntEnter();
-
-
+	OS_ERR err;
   if(EXTI_GetITStatus(EXTI_Line4) != RESET)
   {
     EXTI_ClearITPendingBit(EXTI_Line4);
     //APP_TRACE_INFO(("Exti4\n"));     
     /* post flag when interruption happend */
-//  OS_ERR err;
-//  OS_FLAGS flags_cur;
-//    flags_cur = OSFlagPost(&MyEventFlagGrp, 
-//                            (OS_FLAGS)0x0C, 
-//                            OS_OPT_POST_FLAG_SET, 
-//                            &err);
-
-    W5500_Interrupt=1;
+		OSFlagPost(&W5500IntFlagGrp,
+								(OS_FLAGS)(W5500_IntFlag), 
+								OS_OPT_POST_FLAG_SET, 
+								&err);
+   // W5500_Interrupt=1;
   }
   OSIntExit();
 }

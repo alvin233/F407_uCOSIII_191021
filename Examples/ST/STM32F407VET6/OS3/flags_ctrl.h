@@ -4,15 +4,21 @@
 
 /* FLAG configuration, should be BIT conbination */
 /* #define MyFlagConbination (FLAG_BIT0 + FLAG_BIT5) */
-#define TimeComming FLAG_BIT0
+#define TimeComming (OS_FLAGS)(FLAG_BIT0 + FLAG_BIT2)
 
-extern OS_FLAG_GRP MyEventFlagGrp;
+/* W5500 flag definition */
 extern OS_FLAG_GRP W5500IntFlagGrp;
+#define W5500_IntFlag (OS_FLAGS)(FLAG_BIT0)
+#define W5500_1_IntFlag (OS_FLAGS)(FLAG_BIT1)
+
+/* */
+extern OS_FLAG_GRP MyEventFlagGrp;
+
 
 extern void FLAGS_CTRL_Init(void);
 
 
-/* bit defination */
+/* bit defination, do not change any of it */
 #define FLAG_BIT0 (OS_FLAGS) 	(0x01)
 #define FLAG_BIT1 (OS_FLAGS) 	(0x010)
 #define FLAG_BIT2 (OS_FLAGS) 	(0x0100)
