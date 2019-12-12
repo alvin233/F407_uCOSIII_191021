@@ -14,13 +14,13 @@
 #define W5500_SPI_MOSI_Pin GPIO_Pin_15
 #define W5500_SPI_MOSI_PORT	GPIOB
 
-#define W5500_SCS_Pin		GPIO_Pin_12	//����W5500��CS����	 
+#define W5500_SCS_Pin		GPIO_Pin_12	
 #define W5500_SCS_PORT	GPIOB
 	
-#define W5500_RST_Pin		GPIO_Pin_11	//����W5500��RST����
+#define W5500_RST_Pin		GPIO_Pin_11	
 #define W5500_RST_PORT	GPIOB
 
-#define W5500_INT_Pin		GPIO_Pin_4	//����W5500��INT����
+#define W5500_INT_Pin		GPIO_Pin_4	
 #define W5500_INT_PORT	GPIOC
 
 /***************** Common Register *****************/

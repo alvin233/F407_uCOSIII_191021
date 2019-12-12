@@ -142,8 +142,6 @@ void  App_TaskPWM (void  *p_arg)
 * Note(s)     : none.
 *********************************************************************************************************
 */
-
-//char my_w5500_flags_name = {"My Event Flag Group"};
 void  App_TaskW5500 (void  *p_arg)
 {
   OS_ERR  err;
@@ -217,25 +215,24 @@ void  App_TaskW5500 (void  *p_arg)
 
 void  App_TaskW5500_1 (void  *p_arg)
 {
-  OS_ERR  err;
+	OS_ERR  err;
 	CPU_TS ts;
 	W5500_1_Initial();
-  while (DEF_TRUE) {
-  W5500_1_Socket_Set();
+	while (DEF_TRUE) {
+	W5500_1_Socket_Set();
 	OSFlagPend(&W5500IntFlagGrp, /* (1) Pointer to event flag group*/
-							(OS_FLAGS)(W5500_1_IntFlag), /* Which bits to wait on*/
-							(1000*10), /* Maximum time to wait, 0 means inf */
-							OS_OPT_PEND_BLOCKING + /* wait for the flags comming */
-							OS_OPT_PEND_FLAG_SET_AND + /* all the bit should be set */
-							OS_OPT_PEND_FLAG_CONSUME, /* toggle the comming flags */
-							&ts, /* Timestamp of when posted to*/
-							&err); 
-		if (OS_ERR_TIMEOUT == err)
-		{
-			/* timeout */
-			continue;
-		
-		}
+				(OS_FLAGS)(W5500_1_IntFlag), /* Which bits to wait on*/
+				(1000*10), /* Maximum time to wait, 0 means inf */
+				OS_OPT_PEND_BLOCKING + /* wait for the flags comming */
+				OS_OPT_PEND_FLAG_SET_AND + /* all the bit should be set */
+				OS_OPT_PEND_FLAG_CONSUME, /* toggle the comming flags */
+				&ts, /* Timestamp of when posted to*/
+				&err); 
+	if (OS_ERR_TIMEOUT == err)
+	{
+		/* timeout */
+		continue;
+	}
     /* Interrupt happened */
     W5500_1_Interrupt_Process();
   if((S0_1_Data & S_RECEIVE) == S_RECEIVE)

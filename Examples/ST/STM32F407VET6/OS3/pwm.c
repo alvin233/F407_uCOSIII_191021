@@ -47,16 +47,15 @@ void TIM1_GPIO_Config(void)
 void Tim1__Config(void)
 {
 	u32 TimerPeriod,ccr1;
-	TimerPeriod=  (168000000 / 150000 ) - 1;  //周期
+	TimerPeriod=  (168000000 / 150000 ) - 1;  
 	ccr1 = TimerPeriod / 2;
 	
 	TIM_TimeBaseInitTypeDef  TIM_TimeBaseInitStructure;
 	TIM_OCInitTypeDef  TIM_OCInitStructure;
 	TIM_BDTRInitTypeDef TIM_BDTRInitStructure;
-	//开启TIM8时钟
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1|RCC_APB2Periph_TIM8,ENABLE);  //TIM1时钟使能 
-	//累计从TIM_Period后产生1个更新或者中断
-	//定时器从0计数到1023，即为1024次，为一个定时周期
+	
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1|RCC_APB2Periph_TIM8,ENABLE);  
+
 	TIM_TimeBaseInitStructure.TIM_Prescaler = 0;
 	TIM_TimeBaseInitStructure.TIM_Period = TimerPeriod;
 	//计数方式，向上计数

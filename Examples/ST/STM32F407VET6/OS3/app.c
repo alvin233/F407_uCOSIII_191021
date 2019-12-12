@@ -58,8 +58,8 @@
 #define 	PWM 0
 #else
 /* secondary side selection */
-#define 	W5500 0
-#define 	W5500_1 0
+#define 	W5500 1
+#define 	W5500_1 1
 #define 	PWM 1
 #endif
 /*
@@ -98,7 +98,6 @@ static  void  AppTaskCreate         (void);
 static  void  AppObjCreate          (void);
 
 static  void  App_TaskEq0Fp         (void  *p_arg);
-
 
 /*
 *********************************************************************************************************

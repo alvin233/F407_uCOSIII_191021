@@ -880,10 +880,10 @@ IntDispose:
 *******************************************************************************/
 void Process_Socket_Data(SOCKET s)
 {
-	unsigned short size;
-	size=Read_SOCK_Data_Buffer(s, Rx_Buffer);
-	memcpy(Tx_Buffer, Rx_Buffer, size);			
-	Write_SOCK_Data_Buffer(s, Tx_Buffer, size);
+  unsigned short size;
+  size=Read_SOCK_Data_Buffer(s, Rx_Buffer);
+  memcpy(Tx_Buffer, Rx_Buffer, size);			
+  Write_SOCK_Data_Buffer(s, Tx_Buffer, size);
 }
 /*******************************************************************************
  * Funtion : Write_SOCK_Data_Buffer
