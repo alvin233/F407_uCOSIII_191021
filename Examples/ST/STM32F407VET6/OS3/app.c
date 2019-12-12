@@ -35,6 +35,8 @@
 
 #include  <includes.h>
 #include "app_add.h"
+
+
 /*
 *********************************************************************************************************
 *                                            LOCAL DEFINES
@@ -56,7 +58,7 @@
 #define 	PWM 0
 #else
 /* secondary side selection */
-#define 	W5500 1
+#define 	W5500 0
 #define 	W5500_1 0
 #define 	PWM 1
 #endif
@@ -73,8 +75,7 @@ static  CPU_STK  			AppTaskStartStk[APP_CFG_TASK_START_STK_SIZE];
 static  OS_TCB       App_TaskEq0FpTCB;
 static  CPU_STK      App_TaskEq0FpStk[APP_CFG_TASK_EQ_STK_SIZE];
 
-static  OS_TCB       App_TaskW5500TCB;
-static  CPU_STK      App_TaskW5500Stk[APP_CFG_TASK_W5500_STK_SIZE];
+
 
 /*
 static  OS_TCB       App_TaskW5500TCB;
@@ -97,8 +98,7 @@ static  void  AppTaskCreate         (void);
 static  void  AppObjCreate          (void);
 
 static  void  App_TaskEq0Fp         (void  *p_arg);
-/* Init W5500, make connection and send data to PC */
-static void  App_TaskW5500         (void  *p_arg); 
+
 
 /*
 *********************************************************************************************************
@@ -191,12 +191,20 @@ static  void  AppTaskStart (void *p_arg)
     AppTaskCreate();        
 		/* Create Application tasks                             */
 
-
+		//OS_FLAGS flags_cur;
+		/* create all the FLAG GRP all system need */
+		FLAGS_CTRL_Init();
+		
     while (DEF_TRUE) {                                          /* Task body, always written as an infinite loop.       */
-        OSTimeDlyHMSM(0u, 0u, 2u, 100u,
+        OSTimeDlyHMSM(0u, 0u, 4u, 100u,
                       OS_OPT_TIME_HMSM_STRICT,
                       &err);
-        /* do something here */
+
+			OSFlagPost(&MyEventFlagGrp,
+									(OS_FLAGS)(TimeComming), 
+									OS_OPT_POST_FLAG_SET, 
+									&err);
+      /* do something here */
 	}
 }
 
@@ -343,64 +351,6 @@ static void  App_TaskEq0Fp (void  *p_arg)
   }
 }
 
-/*
-*********************************************************************************************************
-*                                             App_TaskW5500()
-*
-* Description : This task init W5500, and connect send message.
-*               
-*
-* Argument(s) : p_arg   is the argument passed to 'App_TaskEq0Fp' by 'OSTaskCreate()'.
-*
-* Return(s)   : none.
-*
-* Note(s)     : none.
-*********************************************************************************************************
-*/
-static void  App_TaskW5500 (void  *p_arg)
-{
-  OS_ERR  err;
-  //char str[160];
-  W5500_Initial();	
-  while (DEF_TRUE) {
-  W5500_Socket_Set();
-  if(W5500_Interrupt)	
-  {
-    /* Interrupt happened */
-    W5500_Interrupt_Process();
-  }
-  if((S0_Data & S_RECEIVE) == S_RECEIVE)
-  {
-    /* socket0 received data */
-    S0_Data&=~S_RECEIVE;
-    /* receive data and re-send it */
-    Process_Socket_Data(0);
-  }
-  /* send every 500ms */
-  if(S0_State == (S_INIT|S_CONN))
-  {
-    S0_Data&=~S_TRANSMITOK;
-    // memcpy(Tx_Buffer, "\r\nWelcome To W5500_0!\r\n", 23);	
-    memcpy(Tx_Buffer, "\r\nWelcome To W5500_0!", 21);	
-    /* socket 0 send data, size 23 byte */
-    Write_SOCK_Data_Buffer(0, Tx_Buffer, (21));
-    /* output current */
-     //sprintf(str, "\r\n V_I = %f V \r\n V_V = %f V \r\n Cal_I = %f A \r\n Cal_V = %f V \r\n ", V_I_output, V_V_output, Cal_V_I_output, Cal_V_V_output);
-    // memcpy(Tx_Buffer, str, 160);        
-    // Write_SOCK_Data_Buffer(0, Tx_Buffer, 160);
-/*
-     sprintf(str_1, "\r\n V_V = %f V \r\n", data_out_V_V);
-     memcpy(Tx_Buffer, str_1, 80);
-     Write_SOCK_Data_Buffer(0, Tx_Buffer, 80);
-*/
-  }			
-  /* do something here */      
-  OSTimeDlyHMSM(0u, 0u, 1u, 10u,
-  OS_OPT_TIME_HMSM_STRICT,
-  &err);
-  /* output your data by terminal */ 
-  }
-}
 
 
 

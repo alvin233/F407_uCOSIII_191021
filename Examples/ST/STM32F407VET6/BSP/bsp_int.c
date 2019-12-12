@@ -425,10 +425,20 @@ void EXTI3_IRQHandler(void)
 void EXTI4_IRQHandler(void)
 {	
   OSIntEnter();
+
+
   if(EXTI_GetITStatus(EXTI_Line4) != RESET)
   {
     EXTI_ClearITPendingBit(EXTI_Line4);
     //APP_TRACE_INFO(("Exti4\n"));     
+    /* post flag when interruption happend */
+//  OS_ERR err;
+//  OS_FLAGS flags_cur;
+//    flags_cur = OSFlagPost(&MyEventFlagGrp, 
+//                            (OS_FLAGS)0x0C, 
+//                            OS_OPT_POST_FLAG_SET, 
+//                            &err);
+
     W5500_Interrupt=1;
   }
   OSIntExit();

@@ -41,30 +41,19 @@ unsigned char UDP_DPORT[2];
  * S0_Mode = UDP_MODE; UDP broadcast mode;
 **********************************************************************************/
 unsigned char S0_Mode =3;	
-/* TCP servo mode */
-#define TCP_SERVER	0x00
-/* TCP client mode */
-#define TCP_CLIENT	0x01
-/* UDP broadcast mode */
-#define UDP_MODE	0x02
+
 /**********************************************************************************
  * S0_State, port 0 state
  * S0_State = S_INIT; port init finished;
  * S0_State = S_CONN; port connected finished;
 **********************************************************************************/
-unsigned char S0_State =0;	
-/* port has been inited */
-#define S_INIT		0x01	 
-/* port has been connected */
-#define S_CONN		0x02	 
+unsigned char S0_State =0;	 
 /**********************************************************************************
  * S0_Data, port 0 data state
  * S0_Data = S_RECEIVE; port has received one data pack;
  * S0_Data = S_TRANSMITOK; port has sended one data pack;
 **********************************************************************************/
 unsigned char S0_Data;	
-#define S_RECEIVE	 0x01	 
-#define S_TRANSMITOK 0x02	 
 /***************----- Data buffer area -----***************/
 /* RX buffer area */
 unsigned char Rx_Buffer[2048];	 
@@ -882,15 +871,12 @@ IntDispose:
 		goto IntDispose;
 }
 /*******************************************************************************
-* ������  : Process_Socket_Data
-* ����    : W5500���ղ����ͽ��յ�������
-* ����    : s:�˿ں�
-* ���    : ��
-* ����ֵ  : ��
-* ˵��    : �������ȵ���S_rx_process()��W5500�Ķ˿ڽ������ݻ�������ȡ����,
-*			Ȼ�󽫶�ȡ�����ݴ�Rx_Buffer������Temp_Buffer���������д�����
-*			������ϣ������ݴ�Temp_Buffer������Tx_Buffer������������S_tx_process()
-*			�������ݡ�
+ * Funtion : Process_Socket_Data
+ * Description : read the data from data buffer and send back;
+ * Input : socket number;
+ * Output : None
+ * Return : None
+ * Others : None
 *******************************************************************************/
 void Process_Socket_Data(SOCKET s)
 {
@@ -899,27 +885,24 @@ void Process_Socket_Data(SOCKET s)
 	memcpy(Tx_Buffer, Rx_Buffer, size);			
 	Write_SOCK_Data_Buffer(s, Tx_Buffer, size);
 }
-
 /*******************************************************************************
-* ������  : Write_SOCK_Data_Buffer
-* ����    : ������д��W5500�����ݷ��ͻ�����
-* ����    : s:�˿ں�,*dat_ptr:���ݱ��滺����ָ��,size:��д�����ݵĳ���
-* ���    : ��
-* ����ֵ  : ��
-* ˵��    : ��
+ * Funtion : Write_SOCK_Data_Buffer
+ * Description : write the data from *dat_ptr to the socket;
+ * Input : s, socket number; *dat_ptr, data addr; size, data size;
+ * Output : None
+ * Return : None
+ * Others : None
 *******************************************************************************/
 void Write_SOCK_Data_Buffer(SOCKET s, unsigned char *dat_ptr, unsigned short size)
 {
 	unsigned short offset,offset1;
 	unsigned short i;
 
-	//�����UDPģʽ,�����ڴ�����Ŀ��������IP�Ͷ˿ں�
-	if((Read_W5500_SOCK_1Byte(s,Sn_MR)&0x0f) != SOCK_UDP)//���Socket��ʧ��
+	if((Read_W5500_SOCK_1Byte(s,Sn_MR)&0x0f) != SOCK_UDP)
 	{		
-		Write_W5500_SOCK_4Byte(s, Sn_DIPR, UDP_DIPR);//����Ŀ������IP  		
-		Write_W5500_SOCK_2Byte(s, Sn_DPORTR, UDP_DPORT[0]*256+UDP_DPORT[1]);//����Ŀ�������˿ں�				
+		Write_W5500_SOCK_4Byte(s, Sn_DIPR, UDP_DIPR);  		
+		Write_W5500_SOCK_2Byte(s, Sn_DPORTR, UDP_DPORT[0]*256+UDP_DPORT[1]);				
 	}
-
 	offset=Read_W5500_SOCK_2Byte(s,Sn_TX_WR);
 	offset1=offset;
 	offset&=(S_TX_SIZE-1);//����ʵ�ʵ�������ַ
@@ -1063,7 +1046,7 @@ unsigned short Read_SOCK_Data_Buffer(SOCKET s, unsigned char *dat_ptr)
 }
 void W5500_Initial(void)
 {
-    OS_ERR  err;
+  OS_ERR  err;
 /* SPI configuration */
   SPI_Configuration();	
   /* GPIO Init */

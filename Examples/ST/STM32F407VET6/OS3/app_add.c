@@ -84,31 +84,44 @@ void App_TaskW5500_function (void  *p_arg)
 
 void  App_TaskPWM (void  *p_arg)
 {
-	OS_ERR  err;
+  OS_ERR  err;
+  OS_ERR err_1;
+  CPU_TS ts;
+  //OS_FLAGS which_flags;
 	/* no more than 559 */ 
   /* static int PWM_ratio = 558; */
 	TIM1_GPIO_Config();
 	Tim1__Config();
+	  /* create a FLAG to wait for data comming */
+	static int up = 5;
   while (DEF_TRUE) {
+  OSFlagPend(&MyEventFlagGrp, /* (1) Pointer to event flag group*/
+                            (OS_FLAGS)(TimeComming), /* Which bits to wait on*/
+                            0, /* Maximum time to wait, 0 means inf */
+                            OS_OPT_PEND_BLOCKING + /* wait for the flags comming */
+                            OS_OPT_PEND_FLAG_SET_AND + /* the bit should be set */
+														OS_OPT_PEND_FLAG_CONSUME, /* toggle the comming flags */
+                            &ts, /* Timestamp of when posted to*/
+                            &err_1); 
     /* do something here */
-		if(ccr_temp<559)
-					ccr_temp+=5;
-		else
-					ccr_temp=250;  
-		TIM_SetCompare1(TIM1,ccr_temp);
-		TIM_SetCompare1(TIM8,ccr_temp);
-		if (ccr_temp < 250)
+		ccr_temp = 0;
+		if(up < 100)
 		{
-			/* first start up*/
-		OSTimeDlyHMSM(0u, 0u, 0u, 50u,
-      OS_OPT_TIME_HMSM_STRICT,
-      &err);
+			up = up + 30;
 		}
 		else
 		{
-		OSTimeDlyHMSM(0u, 0u, 0u, 100u,
-      OS_OPT_TIME_HMSM_STRICT,
-      &err);
+		  up = 5;
+		}
+		while (ccr_temp < 559)
+		{
+		ccr_temp+=up;
+		TIM_SetCompare1(TIM1,ccr_temp);
+		TIM_SetCompare1(TIM8,ccr_temp);
+			/* first start up*/
+		OSTimeDlyHMSM(0u, 0u, 0u, 50u,
+									OS_OPT_TIME_HMSM_STRICT,
+									&err);
 		}
   }
 }
@@ -128,27 +141,71 @@ void  App_TaskPWM (void  *p_arg)
 *********************************************************************************************************
 */
 
+//char my_w5500_flags_name = {"My Event Flag Group"};
+void  App_TaskW5500 (void  *p_arg)
+{
+  OS_ERR  err;
+  //char str[160];
+  W5500_Initial();	
+  while (DEF_TRUE) {
+  W5500_Socket_Set();
+  /* wait for interruption happen */
+  if(W5500_Interrupt)	
+  {
+    /* Interrupt happened */
+    W5500_Interrupt_Process();
+  }
+  if((S0_Data & S_RECEIVE) == S_RECEIVE)
+  {
+    /* socket0 received data */
+    S0_Data&=~S_RECEIVE;
+    /* receive data and re-send it */
+    Process_Socket_Data(0);
+  }
+  /* send every 500ms */
+  if(S0_State == (S_INIT|S_CONN))
+  {
+    S0_Data&=~S_TRANSMITOK;
+    // memcpy(Tx_Buffer, "\r\nWelcome To W5500_0!\r\n", 23);	
+    memcpy(Tx_Buffer, "\r\nWelcome To W5500_0!", 21);	
+    /* socket 0 send data, size 23 byte */
+    Write_SOCK_Data_Buffer(0, Tx_Buffer, (21));
+    /* output current */
+     //sprintf(str, "\r\n V_I = %f V \r\n V_V = %f V \r\n Cal_I = %f A \r\n Cal_V = %f V \r\n ", V_I_output, V_V_output, Cal_V_I_output, Cal_V_V_output);
+    // memcpy(Tx_Buffer, str, 160);        
+    // Write_SOCK_Data_Buffer(0, Tx_Buffer, 160);
+/*
+     sprintf(str_1, "\r\n V_V = %f V \r\n", data_out_V_V);
+     memcpy(Tx_Buffer, str_1, 80);
+     Write_SOCK_Data_Buffer(0, Tx_Buffer, 80);
+*/
+  }			
+  /* do something here */      
+  OSTimeDlyHMSM(0u, 0u, 1u, 10u,
+  OS_OPT_TIME_HMSM_STRICT,
+  &err);
+  }
+}
+/*
+*********************************************************************************************************
+*                                             App_TaskW5500()
+*
+* Description : This task init W5500, and connect send message.
+*               
+*
+* Argument(s) : p_arg   is the argument passed to 'App_TaskEq0Fp' by 'OSTaskCreate()'.
+*
+* Return(s)   : none.
+*
+* Note(s)     : none.
+*********************************************************************************************************
+*/
+
 void  App_TaskW5500_1 (void  *p_arg)
 {
   OS_ERR  err;
-	//char str[160];
-  //char str_1[160];
-/* SPI configuration */
-  SPI_1_Configuration();	
-  /* GPIO Init */
-  W5500_1_GPIO_Configuration();
-  /* Setting Net Parameter */
-  Load_1_Net_Parameters();
-  /* Reset */
-  while(!W5500_1_Hardware_Reset())
-	{
-		/* trap CPU here while W5500 hardware reset wrong */
-  OSTimeDlyHMSM(0u, 0u, 2u, 100u,
-		OS_OPT_TIME_HMSM_STRICT,
-		&err);
-	}
-	/* W5500 hardware reset OK */
-  W5500_1_Initialization();		
+	W5500_1_Initial();
+
   while (DEF_TRUE) {
   W5500_1_Socket_Set();
   if(W5500_1_Interrupt)	
@@ -187,6 +244,7 @@ void  App_TaskW5500_1 (void  *p_arg)
   /* output your data by terminal */ 
   }
 }
+
 
 
 

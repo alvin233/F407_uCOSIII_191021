@@ -1,5 +1,8 @@
 {
     "files.associations": {
-        "includes.h": "c"
+        "includes.h": "c",
+        "w5500.h": "c",
+        "bsp.h": "c",
+        "os.h": "c"
     }
 }

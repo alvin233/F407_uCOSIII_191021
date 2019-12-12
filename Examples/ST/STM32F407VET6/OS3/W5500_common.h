@@ -205,14 +205,21 @@ typedef unsigned char SOCKET;			//�Զ���˿ں���������
 #define S_TX_SIZE	2048  	/*����Socket���ͻ������Ĵ�С�����Ը���W5500_TMSR�������޸� */
 
 /* S0 mode */
-#define TCP_SERVER		0x00	//TCP������ģʽ
-#define TCP_CLIENT		0x01	//TCP�ͻ���ģʽ 
-#define UDP_MODE		0x02	//UDP(�㲥)ģʽ 
+/* TCP servo mode */
+#define TCP_SERVER	0x00
+/* TCP client mode */
+#define TCP_CLIENT	0x01
+/* UDP broadcast mode */
+#define UDP_MODE	0x02
 /* S0 state */
-#define S_INIT			0x01	//�˿���ɳ�ʼ�� 
-#define S_CONN			0x02	//�˿��������,���������������� 
+/* port has been inited */
+#define S_INIT		0x01	 
+/* port has been connected */
+#define S_CONN		0x02	
 /* S0 data state */
-#define S_RECEIVE		0x01		//�˿ڽ��յ�һ�����ݰ� 
-#define S_TRANSMITOK	0x02		//�˿ڷ���һ�����ݰ���� 
+/* received one data */ 
+#define S_RECEIVE		0x01		
+/* transfered data finised */
+#define S_TRANSMITOK	0x02		
 
 #endif
