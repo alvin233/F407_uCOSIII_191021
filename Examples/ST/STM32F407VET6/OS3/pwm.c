@@ -47,7 +47,7 @@ void TIM1_GPIO_Config(void)
 void Tim1__Config(void)
 {
 	u32 TimerPeriod,ccr1;
-	TimerPeriod=  (168000000 / 150000 ) - 1;  
+	TimerPeriod=  (168000000 / Freq ) - 1;  
 	ccr1 = TimerPeriod / 2;
 	
 	TIM_TimeBaseInitTypeDef  TIM_TimeBaseInitStructure;
@@ -102,4 +102,11 @@ void Tim1__Config(void)
 	TIM_CtrlPWMOutputs(TIM1,ENABLE);                               //使能PWM输出
 	TIM_CtrlPWMOutputs(TIM8,ENABLE);                               //使能PWM输出
 }
+
+
+
+
+
+
+
 

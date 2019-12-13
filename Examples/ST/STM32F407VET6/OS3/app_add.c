@@ -92,10 +92,11 @@ void  App_TaskPWM (void  *p_arg)
   //OS_FLAGS which_flags;
 	/* no more than 559 */ 
   /* static int PWM_ratio = 558; */
-	TIM1_GPIO_Config();
-	Tim1__Config();
+  TIM1_GPIO_Config();
+  Tim1__Config();
+  LED_GPIO_Config();
 	  /* create a FLAG to wait for data comming */
-	static int up = 5;
+  static int up = 5;
   while (DEF_TRUE) {
   OSFlagPend(&MyEventFlagGrp, /* (1) Pointer to event flag group*/
                             (OS_FLAGS)(TimeComming), /* Which bits to wait on*/
@@ -106,9 +107,11 @@ void  App_TaskPWM (void  *p_arg)
                             &ts, /* Timestamp of when posted to*/
                             &err_1); 
     /* do something here */
+#if 1
 		ccr_temp = 0;
 		if(up < 100)
 		{
+          LED2_TOGGLE;
 			up = up + 30;
 		}
 		else
@@ -117,6 +120,7 @@ void  App_TaskPWM (void  *p_arg)
 		}
 		while (ccr_temp < 559)
 		{
+        LED1_TOGGLE;
 		ccr_temp+=up;
 		TIM_SetCompare1(TIM1,ccr_temp);
 		TIM_SetCompare1(TIM8,ccr_temp);
@@ -125,6 +129,7 @@ void  App_TaskPWM (void  *p_arg)
 									OS_OPT_TIME_HMSM_STRICT,
 									&err);
 		}
+#endif
   }
 }
 
@@ -145,7 +150,7 @@ void  App_TaskPWM (void  *p_arg)
 void  App_TaskW5500 (void  *p_arg)
 {
   OS_ERR  err;
-	CPU_TS ts;
+  CPU_TS ts;
   //char str[160];
   W5500_Initial();	
   while (DEF_TRUE) {

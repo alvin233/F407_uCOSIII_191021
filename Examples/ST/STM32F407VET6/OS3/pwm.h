@@ -13,6 +13,8 @@
 //Copyright(C) 广州市星翼电子科技有限公司 2014-2024
 //All rights reserved									  
 ////////////////////////////////////////////////////////////////////////////////// 	
+#define Freq (150000)
+
 extern uint16_t DeadTime;
 extern uint32_t ccr_temp;
 void TIM1_PWM_Init(u32 arr,u32 psc);

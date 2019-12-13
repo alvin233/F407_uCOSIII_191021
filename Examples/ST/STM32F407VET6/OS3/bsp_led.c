@@ -28,8 +28,7 @@ void LED_GPIO_Config(void)
 
 		/*开启LED相关的GPIO外设时钟*/
 		RCC_AHB1PeriphClockCmd ( LED1_GPIO_CLK|
-	                           LED2_GPIO_CLK|
-	                           LED3_GPIO_CLK, ENABLE); 
+	                           LED2_GPIO_CLK, ENABLE); 
 
 		/*选择要控制的GPIO引脚*/															   
 		GPIO_InitStructure.GPIO_Pin = LED1_PIN;	
@@ -40,8 +39,8 @@ void LED_GPIO_Config(void)
     /*设置引脚的输出类型为推挽输出*/
     GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
     
-    /*设置引脚为上拉模式*/
-    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+    /*设置引脚为PULL DOWN模式*/
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;
 
 		/*设置引脚速率为2MHz */   
 		GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz; 
@@ -53,10 +52,6 @@ void LED_GPIO_Config(void)
 		GPIO_InitStructure.GPIO_Pin = LED2_PIN;	
     GPIO_Init(LED2_GPIO_PORT, &GPIO_InitStructure);	
     
-    /*选择要控制的GPIO引脚*/															   
-		GPIO_InitStructure.GPIO_Pin = LED3_PIN;	
-    GPIO_Init(LED3_GPIO_PORT, &GPIO_InitStructure);	
-		
 		/*关闭RGB灯*/
 		LED_ALLOFF;		
 }
