@@ -17,8 +17,14 @@
 
 extern uint16_t DeadTime;
 extern uint32_t ccr_temp;
+#define BUCK(a)	if (a)	\
+					GPIO_SetBits(GPIOD,GPIO_Pin_4);\
+					else		\
+					GPIO_ResetBits(GPIOD,GPIO_Pin_4)
+                      
 void TIM1_PWM_Init(u32 arr,u32 psc);
 void TIM1_GPIO_Config(void);
+void Buck_GPIO_Config(void);
 void Tim1__Config(void);
 
 #endif

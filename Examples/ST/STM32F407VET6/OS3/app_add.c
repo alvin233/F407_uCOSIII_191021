@@ -93,10 +93,14 @@ void  App_TaskPWM (void  *p_arg)
 	/* no more than 559 */ 
   /* static int PWM_ratio = 558; */
   TIM1_GPIO_Config();
+  Buck_GPIO_Config();
+  BUCK(0);
   Tim1__Config();
   LED_GPIO_Config();
 	  /* create a FLAG to wait for data comming */
   static int up = 5;
+ TIM_SetCompare1(TIM1,125);
+  TIM_SetCompare1(TIM8,125);
   while (DEF_TRUE) {
   OSFlagPend(&MyEventFlagGrp, /* (1) Pointer to event flag group*/
                             (OS_FLAGS)(TimeComming), /* Which bits to wait on*/
@@ -108,27 +112,18 @@ void  App_TaskPWM (void  *p_arg)
                             &err_1); 
     /* do something here */
 #if 1
-		ccr_temp = 0;
-		if(up < 100)
-		{
-          LED2_TOGGLE;
-			up = up + 30;
-		}
-		else
-		{
-		  up = 5;
-		}
-		while (ccr_temp < 559)
-		{
-        LED1_TOGGLE;
-		ccr_temp+=up;
-		TIM_SetCompare1(TIM1,ccr_temp);
-		TIM_SetCompare1(TIM8,ccr_temp);
-			/* first start up*/
-		OSTimeDlyHMSM(0u, 0u, 0u, 50u,
+  while (DEF_TRUE) {
+        BUCK(0);
+		OSTimeDlyHMSM(0u, 0u, 0u, 40u,
 									OS_OPT_TIME_HMSM_STRICT,
 									&err);
-		}
+        LED1_TOGGLE;
+        //BUCK(1);
+        OSTimeDlyHMSM(0u, 0u, 0u, 10u,
+                            OS_OPT_TIME_HMSM_STRICT,
+                            &err);
+
+  }
 #endif
   }
 }

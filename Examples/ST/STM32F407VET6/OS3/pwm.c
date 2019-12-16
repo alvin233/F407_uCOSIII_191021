@@ -103,6 +103,23 @@ void Tim1__Config(void)
 	TIM_CtrlPWMOutputs(TIM8,ENABLE);                               //使能PWM输出
 }
 
+void Buck_GPIO_Config(void)
+{	
+	GPIO_InitTypeDef GPIO_InitStructure;
+	/* enable CLK */
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD,ENABLE);
+	/* PIN configuration below share the same function as below, be careful */
+    /* Pin output configure */
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;													//
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;												//速度
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;      											//推挽复用输出
+    /* pull up for disable voltage output */
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;        				
+	/* enable PC6's GPIO function as the pos-side of the output signal */
+	/* PD4*/
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;
+	GPIO_Init(GPIOD,&GPIO_InitStructure);
+}
 
 
 
