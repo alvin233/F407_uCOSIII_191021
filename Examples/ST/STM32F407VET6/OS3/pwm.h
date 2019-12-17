@@ -13,7 +13,9 @@
 //Copyright(C) 广州市星翼电子科技有限公司 2014-2024
 //All rights reserved									  
 ////////////////////////////////////////////////////////////////////////////////// 	
+#define Sys_Freq (168000000)
 #define Freq (150000)
+#define Max_Half_Period (Sys_Freq/Freq)
 
 extern uint16_t DeadTime;
 extern uint32_t ccr_temp;
