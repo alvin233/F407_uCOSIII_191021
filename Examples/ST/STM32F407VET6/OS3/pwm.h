@@ -14,7 +14,7 @@
 //All rights reserved									  
 ////////////////////////////////////////////////////////////////////////////////// 	
 #define Sys_Freq (168000000)
-#define Freq (150000)
+#define Freq (85000)
 #define Max_Half_Period (Sys_Freq/Freq)
 
 extern uint16_t DeadTime;

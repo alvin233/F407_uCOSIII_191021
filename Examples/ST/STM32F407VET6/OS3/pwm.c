@@ -24,9 +24,9 @@ void TIM1_GPIO_Config(void)
 	GPIO_PinAFConfig(GPIOC,GPIO_PinSource6,GPIO_AF_TIM8);
 	/* PIN configuration below share the same function as below, be careful */
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;													//复用功能
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;												//速度
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;												//速度
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;      											//推挽复用输出
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;        											//上拉
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;        											//
 	/* enable PC6's GPIO function as the pos-side of the output signal */
 	/* PC6 */
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;

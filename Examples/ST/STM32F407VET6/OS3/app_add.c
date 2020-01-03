@@ -113,17 +113,31 @@ void  App_TaskPWM (void  *p_arg)
     /* do something here */
 #if 1
   while (DEF_TRUE) {
-        //BUCK(0);
-		OSTimeDlyHMSM(0u, 0u, 0u, 40u,
+        BUCK(0);
+        LED1_OFF;
+		OSTimeDlyHMSM(0u, 0u, 2u, 40u,
 									OS_OPT_TIME_HMSM_STRICT,
 									&err);
-        LED1_TOGGLE;
+        LED1_ON;
         BUCK(1);
-        OSTimeDlyHMSM(0u, 0u, 0u, 10u,
+        OSTimeDlyHMSM(0u, 0u, 2u, 10u,
                             OS_OPT_TIME_HMSM_STRICT,
                             &err);
 
   }
+#endif
+#if 0
+ 		ccr_temp = 0;
+ 		while (ccr_temp < 500)
+ 		{
+        LED1_TOGGLE;
+ 		ccr_temp+=3;
+ 		TIM_SetCompare1(TIM1,ccr_temp);
+ 		TIM_SetCompare1(TIM8,ccr_temp);
+        OSTimeDlyHMSM(0u, 0u, 0u, 10u,
+                            OS_OPT_TIME_HMSM_STRICT,
+                            &err);
+ 		}
 #endif
   }
 }
